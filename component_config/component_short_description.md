@@ -1,0 +1,1 @@
+Replicate Storage tables as Views in selected destination DB.

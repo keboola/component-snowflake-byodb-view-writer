@@ -2,12 +2,65 @@
   "type": "object",
   "title": "extractor configuration",
   "required": [
-    "print_hello"
+    "username",
+    "#password",
+    "account",
+    "warehouse",
+    "role",
+    "destination_db",
+    "bucket_ids"
   ],
   "properties": {
-    "print_hello": {
-      "type": "boolean",
-      "title": "Print Hello"
+    "#storage_token": {
+      "type": "string",
+      "title": "Storage Token",
+      "format": "password",
+      "propertyOrder": 100
+    },
+    "username": {
+      "type": "string",
+      "title": "User Name",
+      "propertyOrder": 110
+    },
+    "#password": {
+      "type": "string",
+      "title": "Storage Token",
+      "format": "password",
+      "propertyOrder": 120
+    },
+    "account": {
+      "type": "string",
+      "title": "Account",
+      "decription": "Snowflake account, e.g. cID.eu-central-1",
+      "propertyOrder": 130
+    },
+    "warehouse": {
+      "type": "string",
+      "title": "Warehouse",
+      "decription": "Snowflake Warehouse name",
+      "propertyOrder": 140
+    },
+    "role": {
+      "type": "string",
+      "title": "Role",
+      "decription": "Snowflake role name. If emtpy, default role will be used.",
+      "propertyOrder": 150
+    },
+    "destination_db": {
+      "type": "string",
+      "title": "Destination DB name",
+      "decription": "Name of the destination database in Snowflake",
+      "propertyOrder": 160
+    },
+    "bucket_ids": {
+      "type": "array",
+      "title": "Storage Bucket IDs",
+      "description": "Storage Bucket IDs. If left empty, all buckets in the project will be used.",
+      "items": {
+        "type": "string",
+        "title": "Bucket ID"
+      },
+      "propertyOrder": 170
     },
     "debug": {
       "type": "boolean",

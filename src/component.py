@@ -2,14 +2,17 @@
 Template Component main class.
 
 '''
-import csv
 import logging
-from datetime import datetime
 
 from keboola.component.base import ComponentBase
 from keboola.component.exceptions import UserException
 
 # configuration variables
+import configuration
+from dbstorage import snowflake_client
+from dbstorage.snowflake_client import Credentials
+from view_creator import ViewCreator
+
 KEY_API_TOKEN = '#api_token'
 KEY_PRINT_HELLO = 'print_hello'
 
@@ -32,6 +35,13 @@ class Component(ComponentBase):
 
     def __init__(self):
         super().__init__()
+        self._configuration: configuration.Configuration
+        self._snowflake_client: snowflake_client.SnowflakeClient()
+
+    def _init_configuration(self):
+        self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())
+        self._configuration: configuration.Configuration = configuration.Configuration.load_from_dict(
+            self.configuration.parameters)
 
     def run(self):
         '''
@@ -40,37 +50,27 @@ class Component(ComponentBase):
 
         # ####### EXAMPLE TO REMOVE
         # check for missing configuration parameters
-        self.validate_configuration_parameters(REQUIRED_PARAMETERS)
-        self.validate_image_parameters(REQUIRED_IMAGE_PARS)
-        params = self.configuration.parameters
-        # Access parameters in data/config.json
-        if params.get(KEY_PRINT_HELLO):
-            logging.info("Hello World")
 
-        # get last state data/in/state.json from previous run
-        previous_state = self.get_state_file()
-        logging.info(previous_state.get('some_state_parameter'))
+        self._init_configuration()
 
-        # Create output table (Tabledefinition - just metadata)
-        table = self.create_out_table_definition('output.csv', incremental=True, primary_key=['timestamp'])
+        # config token support
+        storage_token = self.configuration.parameters.get('#storage_token') or self.environment_variables.token
+        view_creator = ViewCreator(Credentials(account=self._configuration.account,
+                                               user=self._configuration.username,
+                                               password=self._configuration.pswd_password,
+                                               warehouse=self._configuration.warehouse,
+                                               role=self._configuration.role),
+                                   self._get_kbc_root_url(),
+                                   storage_token,
+                                   self.environment_variables.project_id)
 
-        # get file path of the table (data/out/tables/Features.csv)
-        out_table_path = table.full_path
-        logging.info(out_table_path)
+        for bucket_id in self._configuration.bucket_ids:
+            logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
+            view_creator.create_views_from_bucket(bucket_id, self._configuration.destination_db,
+                                                  self.environment_variables.run_id)
 
-        # DO whatever and save into out_table_path
-        with open(table.full_path, mode='wt', encoding='utf-8', newline='') as out_file:
-            writer = csv.DictWriter(out_file, fieldnames=['timestamp'])
-            writer.writeheader()
-            writer.writerow({"timestamp": datetime.now().isoformat()})
-
-        # Save table manifest (output.csv.manifest) from the tabledefinition
-        self.write_manifest(table)
-
-        # Write new state - will be available next run
-        self.write_state_file({"some_state_parameter": "value"})
-
-        # ####### EXAMPLE TO REMOVE END
+    def _get_kbc_root_url(self):
+        return self.environment_variables.stack_id
 
 
 """

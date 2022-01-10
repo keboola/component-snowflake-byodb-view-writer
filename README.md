@@ -1,7 +1,9 @@
 Snowflake BYODB View Writer
 =============
 
-Description
+Takes all tables in selected bucket and creates views containing datatypes in the external db within the same Snowflake account.
+
+
 
 **Table of contents:**
 
@@ -13,39 +15,34 @@ Functionality notes
 Prerequisites
 =============
 
-Get the API token, register application, etc.
+Create dedicated user with read access to the KBC project databse and view creation access to the external database:
 
-Features
-========
+```sql
+CREATE ROLE "VIEW_CREATOR_ROLE_XX";
+CREATE USER "VIEW_CREATOR"
+    PASSWORD = "YOUR_PASSWORD"
+    DEFAULT_ROLE = "VIEW_CREATOR_ROLE_XX";
 
-| **Feature**             | **Note**                                      |
-|-------------------------|-----------------------------------------------|
-| Generic UI form         | Dynamic UI form                               |
-| Row Based configuration | Allows structuring the configuration in rows. |
-| oAuth                   | oAuth authentication enabled                  |
-| Incremental loading     | Allows fetching data in new increments.       |
-| Backfill mode           | Support for seamless backfill setup.          |
-| Date range filter       | Specify date range.                           |
+GRANT ROLE "VIEW_CREATOR_ROLE_XX" TO USER "VIEW_CREATOR";
 
-Supported endpoints
-===================
+-- Assign necessary grants for KBC Project Read Access
+GRANT USAGE ON WAREHOUSE "YOUR_BYODB_WAREHOUSE" TO ROLE VIEW_CREATOR_ROLE_XX;
+GRANT USAGE ON DATABASE KEBOOLA_XX TO ROLE VIEW_CREATOR_ROLE_XX;
 
-If you need more endpoints, please submit your request to
-[ideas.keboola.com](https://ideas.keboola.com/)
+GRANT USAGE ON FUTURE SCHEMAS IN DATABASE KEBOOLA_XX TO ROLE VIEW_CREATOR_ROLE_XX;
+GRANT USAGE ON ALL SCHEMAS IN DATABASE KEBOOLA_XX TO ROLE VIEW_CREATOR_ROLE_XX;
 
-Configuration
-=============
+GRANT SELECT ON ALL TABLES IN DATABASE KEBOOLA_XX TO ROLE VIEW_CREATOR_ROLE_XX;
+GRANT SELECT ON FUTURE TABLES IN DATABASE KEBOOLA_XX TO ROLE VIEW_CREATOR_ROLE_XX;
 
-Param 1
--------
+-- Assign necessary grants for EXTERNAL DB View Creation
+GRANT USAGE ON DATABASE YOUR_EXTERNAL_DB TO ROLE VIEW_CREATOR_ROLE_XX;
+GRANT CREATE SCHEMA ON DATABASE YOUR_EXTERNAL_DB TO ROLE VIEW_CREATOR_ROLE_XX;
+```
 
-Param 2
--------
 
-Output
-======
 
-List of tables, foreign keys, schema.
+
 
 Development
 -----------

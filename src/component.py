@@ -70,7 +70,7 @@ class Component(ComponentBase):
                                                   self.environment_variables.run_id)
 
     def _get_kbc_root_url(self):
-        return self.environment_variables.stack_id
+        return f'https://{self.environment_variables.stack_id}'
 
 
 """

@@ -97,19 +97,6 @@ class ViewCreator:
 
         return ','.join(column_definitions)
 
-    def _build_view_query(self, bucket_id, table_name, table_columns, destination_database):
-
-        column_definitions = self._build_column_definitions(table_columns)
-
-        table_id = f'"{bucket_id}"."{table_name}"'
-        statement = f'''
-                CREATE OR REPLACE VIEW "{destination_database}".{table_id} AS
-                    SELECT {column_definitions}, 
-                           "_timestamp"::TIMESTAMP AS "_timestamp"
-                    FROM "{self.project_db_name}".{table_id};'''
-
-        return statement
-
     def create_views_from_bucket(self, bucket_id: str, destination_database: str, session_id: str = ''):
         """
         Creates views with datatypes for all tables in the bucket.

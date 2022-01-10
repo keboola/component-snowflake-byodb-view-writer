@@ -10,7 +10,7 @@ class ConfigurationBase:
 
     @staticmethod
     def _convert_private_value(value: str):
-       return value.replace('"#', '"pswd_')
+        return value.replace('"#', '"pswd_')
 
     @staticmethod
     def _convert_private_value_inv(value: str):

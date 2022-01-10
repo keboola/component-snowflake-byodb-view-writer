@@ -47,8 +47,8 @@ class ConfigurationBase:
 
 @dataclass
 class AdditionalOptions(ConfigurationBase):
-    force_column_case: bool
-    views_uppercase: bool
+    column_case: str
+    view_case: str
 
 
 @dataclass

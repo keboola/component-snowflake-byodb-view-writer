@@ -1,1 +1,64 @@
-{}
+{
+  "type": "object",
+  "title": "extractor configuration",
+  "required": [
+    "destination_db",
+    "bucket_ids"
+  ],
+  "properties": {
+    "destination_db": {
+      "type": "string",
+      "title": "Destination DB name",
+      "description": "Name of the destination database in Snowflake",
+      "propertyOrder": 160
+    },
+    "bucket_ids": {
+      "type": "array",
+      "title": "Storage Bucket IDs",
+      "description": "Storage Bucket IDs. If left empty, all buckets in the project will be used.",
+      "items": {
+        "type": "string",
+        "title": "Bucket ID"
+      },
+      "propertyOrder": 170
+    },
+    "additional_options": {
+      "type": "object",
+      "title": "Additional Options",
+      "format": "grid",
+      "required": [
+        "column_case",
+        "view_case"
+      ],
+      "properties": {
+        "column_case": {
+          "type": "string",
+          "title": "Column case",
+          "enum": [
+            "original",
+            "upper",
+            "lower"
+          ],
+          "default": "original",
+          "propertyOrder": 10
+        },
+        "view_case": {
+          "type": "string",
+          "title": "View Case",
+          "enum": [
+            "original",
+            "upper",
+            "lower"
+          ],
+          "default": "original",
+          "propertyOrder": 20
+        }
+      },
+      "propertyOrder": 180
+    },
+    "debug": {
+      "type": "boolean",
+      "title": "Debug"
+    }
+  }
+}

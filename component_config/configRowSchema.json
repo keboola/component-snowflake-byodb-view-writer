@@ -55,10 +55,6 @@
         }
       },
       "propertyOrder": 180
-    },
-    "debug": {
-      "type": "boolean",
-      "title": "Debug"
     }
   }
 }

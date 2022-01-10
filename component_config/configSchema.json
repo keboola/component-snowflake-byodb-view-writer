@@ -24,32 +24,32 @@
     },
     "#password": {
       "type": "string",
-      "title": "Storage Token",
+      "title": "Password",
       "format": "password",
       "propertyOrder": 120
     },
     "account": {
       "type": "string",
       "title": "Account",
-      "decription": "Snowflake account, e.g. cID.eu-central-1",
+      "description": "Snowflake account, e.g. cID.eu-central-1",
       "propertyOrder": 130
     },
     "warehouse": {
       "type": "string",
       "title": "Warehouse",
-      "decription": "Snowflake Warehouse name",
+      "description": "Snowflake Warehouse name",
       "propertyOrder": 140
     },
     "role": {
       "type": "string",
       "title": "Role",
-      "decription": "Snowflake role name. If emtpy, default role will be used.",
+      "description": "Snowflake role name. If emtpy, default role will be used.",
       "propertyOrder": 150
     },
     "destination_db": {
       "type": "string",
       "title": "Destination DB name",
-      "decription": "Name of the destination database in Snowflake",
+      "description": "Name of the destination database in Snowflake",
       "propertyOrder": 160
     },
     "bucket_ids": {

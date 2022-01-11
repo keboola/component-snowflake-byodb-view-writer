@@ -47,8 +47,8 @@ class ConfigurationBase:
 
 @dataclass
 class AdditionalOptions(ConfigurationBase):
-    column_case: str
-    view_case: str
+    column_case: str = 'original'
+    view_case: str = 'original'
 
 
 @dataclass

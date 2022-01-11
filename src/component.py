@@ -44,11 +44,10 @@ class Component(ComponentBase):
             self.configuration.parameters)
 
     def run(self):
-        '''
+        """
         Main execution code
-        '''
+        """
 
-        # ####### EXAMPLE TO REMOVE
         # check for missing configuration parameters
 
         self._init_configuration()
@@ -64,10 +63,14 @@ class Component(ComponentBase):
                                    storage_token,
                                    self.environment_variables.project_id)
 
+        additional_options = self._configuration.additional_options or configuration.AdditionalOptions()
+
         for bucket_id in self._configuration.bucket_ids:
             logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
             view_creator.create_views_from_bucket(bucket_id, self._configuration.destination_db,
-                                                  self.environment_variables.run_id)
+                                                  column_name_case=additional_options.column_case,
+                                                  view_name_case=additional_options.view_case,
+                                                  session_id=self.environment_variables.run_id)
 
     def _get_kbc_root_url(self):
         return f'https://{self.environment_variables.stack_id}'

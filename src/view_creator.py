@@ -86,23 +86,56 @@ class ViewCreator:
 
         return column_datatypes
 
-    def _build_column_definitions(self, table_columns: Dict[str, StorageDataType]) -> str:
+    def _build_column_definitions(self, table_columns: Dict[str, StorageDataType],
+                                  column_name_case: str = 'original') -> str:
         column_definitions = []
         for name, dtype in table_columns.items():
             column_def = f'"{name}"::{dtype.type}'
             if dtype.length:
                 column_def += f'({dtype.length})'
-            column_def += f' AS "{name}"'
+            column_def += f' AS "{self._convert_case(name, column_name_case)}"'
             column_definitions.append(column_def)
 
         return ','.join(column_definitions)
 
-    def create_views_from_bucket(self, bucket_id: str, destination_database: str, session_id: str = ''):
+    @staticmethod
+    def _convert_case(identifier: str, case_conversion: str = 'original'):
+        """
+        Modifies the case of the name identifier.
+        'original' to keep the case unchanged, 'upper'/'lower' to force the case of the identifier
+        Args:
+            identifier: string to convert
+            case_conversion: 'original' to keep the case unchanged, 'upper'/'lower'
+
+        Returns:
+
+        """
+        if case_conversion == 'original':
+            pass
+        elif case_conversion == 'upper':
+            identifier = identifier.upper()
+        elif case_conversion == 'lower':
+            identifier = identifier.lower()
+        else:
+            raise ValueError(
+                f"Invalid case option '{case_conversion}', supported values are ['original','upper','lower']")
+        return identifier
+
+    def create_views_from_bucket(self, bucket_id: str, destination_database: str,
+                                 view_name_case: str = 'original',
+                                 column_name_case: str = 'original',
+                                 session_id: str = ''):
         """
         Creates views with datatypes for all tables in the bucket.
         Args:
             bucket_id: Source KBC Storage bucket ID
             destination_database: Destination DB name in Snowflake.
+            column_name_case: str: Modifies the case of the COLUMN name identifier.
+                                    'original' to keep the case unchanged, 'upper'/'lower' to force the case
+                                    of the identifier
+            view_name_case: str: Modifies the case of the VIEW name identifier.
+                                    'original' to keep the case unchanged, 'upper'/'lower' to force the case
+                                    of the identifier
             session_id: Optional ID to use in session ID
 
         Returns:
@@ -123,14 +156,17 @@ class ViewCreator:
                 table_name = table['name']
                 table_columns = self._get_table_columns(table)
 
-                self._create_view_in_external_db(bucket_id, table_name, table_columns, destination_database)
+                self._create_view_in_external_db(bucket_id, table_name, table_columns, destination_database,
+                                                 view_name_case)
 
-    def _create_view_in_external_db(self, bucket_id, table_name, table_columns, destination_database):
-        column_definitions = self._build_column_definitions(table_columns)
+    def _create_view_in_external_db(self, bucket_id: str, table_name: str, table_columns: Dict[str, StorageDataType],
+                                    destination_database: str,
+                                    view_name_case: str = 'original',
+                                    column_name_case: str = 'original'):
+        column_definitions = self._build_column_definitions(table_columns, column_name_case)
 
-        table_id = f'"{bucket_id}"."{table_name}"'
-        destination_table = f'"{destination_database}".{table_id}'
-        source_table = f'"{self.project_db_name}".{table_id}'
+        destination_table = f'"{destination_database}"."{bucket_id}"."{self._convert_case(table_name, view_name_case)}"'
+        source_table = f'"{self.project_db_name}"."{bucket_id}"."{table_name}"'
         columns_definition = f'{column_definitions}, "_timestamp"::TIMESTAMP AS "_timestamp"'
 
         self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table)

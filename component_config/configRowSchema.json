@@ -18,6 +18,7 @@
       "description": "Storage Bucket IDs. If left empty, all buckets in the project will be used.",
       "items": {
         "type": "string",
+        "minLength": 5,
         "title": "Bucket ID"
       },
       "propertyOrder": 170

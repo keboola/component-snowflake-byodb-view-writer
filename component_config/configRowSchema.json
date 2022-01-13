@@ -26,7 +26,7 @@
     "additional_options": {
       "type": "object",
       "title": "Additional Options",
-      "format": "grid",
+      "format": "grid-strict",
       "required": [
         "column_case",
         "view_case"
@@ -40,6 +40,9 @@
             "upper",
             "lower"
           ],
+          "options": {
+            "grid_columns": 4
+          },
           "default": "original",
           "propertyOrder": 10
         },
@@ -51,8 +54,22 @@
             "upper",
             "lower"
           ],
+          "options": {
+            "grid_columns": 4
+          },
           "default": "original",
           "propertyOrder": 20
+        },
+        "use_bucket_alias": {
+          "type": "boolean",
+          "format": "checkbox",
+          "title": "Use bucket alias",
+          "description": "Use bucket alias (user defined name) in the VIEW name instead of the Bucket ID",
+          "options": {
+            "grid_columns": 4
+          },
+          "default": true,
+          "propertyOrder": 30
         }
       },
       "propertyOrder": 180

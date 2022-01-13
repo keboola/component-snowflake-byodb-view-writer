@@ -69,6 +69,7 @@ class SnowflakeClient:
     @validate_sql_placeholders
     def create_or_replace_view(self, name, columns_definition: str, source_table: str):
         statement = f"CREATE OR REPLACE VIEW {name} AS SELECT {columns_definition} FROM {source_table}"
+        logging.info(f"Creating view {name}. (Query in detail)", extra={"full_message": statement})
         self.execute_query(statement)
 
     @validate_sql_placeholders

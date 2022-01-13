@@ -49,6 +49,7 @@ class ConfigurationBase:
 class AdditionalOptions(ConfigurationBase):
     column_case: str = 'original'
     view_case: str = 'original'
+    use_bucket_alias: bool = True
 
 
 @dataclass

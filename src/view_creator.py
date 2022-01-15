@@ -128,6 +128,9 @@ class ViewCreator:
                 f"Invalid case option '{case_conversion}', supported values are ['original','upper','lower']")
         return identifier
 
+    def get_all_bucket_ids(self):
+        return [b['id'] for b in self._sapi_client.buckets.list()]
+
     def create_views_from_bucket(self, bucket_id: str, destination_database: str,
                                  view_name_case: str = 'original',
                                  column_name_case: str = 'original',

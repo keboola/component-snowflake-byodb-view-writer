@@ -95,6 +95,7 @@ class SnowflakeClient:
     def close(self):
         if self.__cursor:
             self.__cursor.close()
+            self.__cursor = None
 
         self._connection.close()
 

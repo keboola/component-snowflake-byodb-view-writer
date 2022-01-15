@@ -57,7 +57,7 @@ class ViewCreator:
         datatype = StorageDataType('')
 
         for md_item in column_metadata[::-1]:
-            if not datatype.type and md_item['key'] in ['KBC.datatype.baseType']:
+            if not datatype.type and md_item['key'] in ['KBC.datatype.basetype']:
                 datatype.type = md_item['value']
                 datatype.type_provider = md_item['provider']
             if not datatype.length and md_item['key'] == 'KBC.datatype.length':
@@ -98,7 +98,7 @@ class ViewCreator:
                 identifier_name = f'"{name}"'
 
             column_def = f'{identifier_name}::{dtype.type}'
-            if dtype.length:
+            if dtype.length and dtype.type.upper() != 'INTEGER':
                 column_def += f'({dtype.length})'
             column_def += f' AS "{self._convert_case(name, column_name_case)}"'
             column_definitions.append(column_def)

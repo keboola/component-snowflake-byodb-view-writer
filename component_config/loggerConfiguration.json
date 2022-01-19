@@ -1,7 +1,7 @@
 {
   "verbosity": {
     "100": "normal",
-    "200": "normal",
+    "200": "verbose",
     "250": "normal",
     "300": "verbose",
     "400": "verbose",

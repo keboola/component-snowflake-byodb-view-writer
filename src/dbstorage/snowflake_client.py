@@ -37,7 +37,7 @@ def validate_sql_placeholders(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         for a in args:
-            if ';' in a:
+            if isinstance(a, str) and ';' in a:
                 raise ValueError(f'Invalid SQL parameter {a}')
         return func(self, *args, **kwargs)
 
@@ -67,14 +67,29 @@ class SnowflakeClient:
         self._cursor.execute(query)
 
     @validate_sql_placeholders
-    def create_or_replace_view(self, name, columns_definition: str, source_table: str):
-        statement = f"CREATE OR REPLACE VIEW {name} AS SELECT {columns_definition} FROM {source_table}"
+    def create_or_replace_view(self, name, columns_definition: str, source_table: str, copy_grants: bool = False):
+        copy_grants_query = ''
+        if copy_grants:
+            copy_grants_query = ' COPY GRANTS'
+        statement = f"CREATE OR REPLACE VIEW {name}{copy_grants_query} " \
+                    f"AS SELECT {columns_definition} FROM {source_table}"
         logging.info(f"Creating view {name}. (Query in detail)", extra={"full_message": statement})
         self.execute_query(statement)
 
     @validate_sql_placeholders
-    def create_or_replace_schema(self, database: str, schema_name: str):
-        statement = f'CREATE OR REPLACE SCHEMA "{database}"."{schema_name}";'
+    def create_or_replace_schema(self, database: str, schema_name: str, copy_grants: bool = False):
+        copy_grants_query = ''
+        if copy_grants:
+            copy_grants_query = ' COPY GRANTS'
+        statement = f'CREATE OR REPLACE SCHEMA "{database}"."{schema_name}"{copy_grants_query};'
+        self.execute_query(statement)
+
+    @validate_sql_placeholders
+    def create_if_not_exist_schema(self, database: str, schema_name: str, copy_grants: bool = False):
+        copy_grants_query = ''
+        if copy_grants:
+            copy_grants_query = ' COPY GRANTS'
+        statement = f'CREATE SCHEMA IF NOT EXISTS "{database}"."{schema_name}"{copy_grants_query};'
         self.execute_query(statement)
 
     @validate_sql_placeholders

@@ -166,7 +166,7 @@ class ViewCreator:
 
             destination_schema = self._get_destination_schema_name(bucket_id, use_bucket_alias)
 
-            self._snowflake_client.create_or_replace_schema(destination_database, destination_schema)
+            self._snowflake_client.create_if_not_exist_schema(destination_database, destination_schema)
             for table in tables_resp:
                 table_name = table['name']
                 table_columns = self._get_table_columns(table)
@@ -196,7 +196,7 @@ class ViewCreator:
         source_table = f'"{self.project_db_name}"."{bucket_id}"."{table_name}"'
         columns_definition = f'{column_definitions}, "_timestamp"::TIMESTAMP AS "_timestamp"'
 
-        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table)
+        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table, True)
 
     @property
     def project_db_name(self):

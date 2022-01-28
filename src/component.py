@@ -65,7 +65,12 @@ class Component(ComponentBase):
 
         additional_options = self._configuration.additional_options or configuration.AdditionalOptions()
 
-        for bucket_id in self._configuration.bucket_ids:
+        bucket_ids = self._configuration.bucket_ids
+        if not bucket_ids:
+            logging.info('No buckets specified, processing all available buckets')
+            bucket_ids = view_creator.get_all_bucket_ids()
+
+        for bucket_id in bucket_ids:
             logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
             view_creator.create_views_from_bucket(bucket_id, self._configuration.destination_db,
                                                   column_name_case=additional_options.column_case,

@@ -57,7 +57,7 @@ class ViewCreator:
         datatype = StorageDataType('')
 
         for md_item in column_metadata[::-1]:
-            if not datatype.type and md_item['key'] in ['KBC.datatype.baseType']:
+            if not datatype.type and md_item['key'] in ['KBC.datatype.basetype']:
                 datatype.type = md_item['value']
                 datatype.type_provider = md_item['provider']
             if not datatype.length and md_item['key'] == 'KBC.datatype.length':
@@ -98,7 +98,7 @@ class ViewCreator:
                 identifier_name = f'"{name}"'
 
             column_def = f'{identifier_name}::{dtype.type}'
-            if dtype.length:
+            if dtype.length and dtype.type.upper() != 'INTEGER':
                 column_def += f'({dtype.length})'
             column_def += f' AS "{self._convert_case(name, column_name_case)}"'
             column_definitions.append(column_def)
@@ -127,6 +127,9 @@ class ViewCreator:
             raise ValueError(
                 f"Invalid case option '{case_conversion}', supported values are ['original','upper','lower']")
         return identifier
+
+    def get_all_bucket_ids(self):
+        return [b['id'] for b in self._sapi_client.buckets.list()]
 
     def create_views_from_bucket(self, bucket_id: str, destination_database: str,
                                  view_name_case: str = 'original',
@@ -163,7 +166,7 @@ class ViewCreator:
 
             destination_schema = self._get_destination_schema_name(bucket_id, use_bucket_alias)
 
-            self._snowflake_client.create_or_replace_schema(destination_database, destination_schema)
+            self._snowflake_client.create_if_not_exist_schema(destination_database, destination_schema)
             for table in tables_resp:
                 table_name = table['name']
                 table_columns = self._get_table_columns(table)
@@ -193,7 +196,7 @@ class ViewCreator:
         source_table = f'"{self.project_db_name}"."{bucket_id}"."{table_name}"'
         columns_definition = f'{column_definitions}, "_timestamp"::TIMESTAMP AS "_timestamp"'
 
-        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table)
+        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table, True)
 
     @property
     def project_db_name(self):

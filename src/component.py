@@ -76,7 +76,8 @@ class Component(ComponentBase):
                                                   column_name_case=additional_options.column_case,
                                                   view_name_case=additional_options.view_case,
                                                   use_bucket_alias=additional_options.use_bucket_alias,
-                                                  session_id=self.environment_variables.run_id)
+                                                  session_id=self.environment_variables.run_id,
+                                                  skip_shared_tables=additional_options.ignore_shared_tables)
 
     def _get_kbc_root_url(self):
         return f'https://{self.environment_variables.stack_id}'

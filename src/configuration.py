@@ -50,6 +50,7 @@ class AdditionalOptions(ConfigurationBase):
     column_case: str = 'original'
     view_case: str = 'original'
     use_bucket_alias: bool = True
+    ignore_shared_tables: bool = True
 
 
 @dataclass

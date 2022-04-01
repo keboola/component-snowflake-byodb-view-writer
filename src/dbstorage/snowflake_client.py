@@ -64,7 +64,7 @@ class SnowflakeClient:
     @_check_connection
     def execute_query(self, query):
         logging.debug(f"{query}")
-        self._cursor.execute(query)
+        self._cursor.execute(query).fetchall()
 
     @validate_sql_placeholders
     def create_or_replace_view(self, name, columns_definition: str, source_table: str, copy_grants: bool = False):
@@ -111,8 +111,8 @@ class SnowflakeClient:
         if self.__cursor:
             self.__cursor.close()
             self.__cursor = None
-
-        self._connection.close()
+        if self._connection:
+            self._connection.close()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()

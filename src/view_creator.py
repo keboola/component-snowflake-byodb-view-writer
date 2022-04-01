@@ -29,6 +29,7 @@ class ViewCreator:
         self.__snowflake_credentials = snowflake_credentials
         self._sapi_client = Client(kbc_root_url, storage_token)
         self._project_id = project_id
+        self._current_project_id = project_id
 
     def _group_by_timestamp(self, data: dict):
         result = {}
@@ -135,7 +136,8 @@ class ViewCreator:
                                  view_name_case: str = 'original',
                                  column_name_case: str = 'original',
                                  use_bucket_alias: bool = True,
-                                 session_id: str = ''):
+                                 session_id: str = '',
+                                 skip_shared_tables: bool = True):
         """
         Creates views with datatypes for all tables in the bucket.
         Args:
@@ -149,6 +151,7 @@ class ViewCreator:
                                     of the identifier
             session_id: Optional ID to use in session ID
             use_bucket_alias: bool: Use bucket alias instead of the Bucket ID for view name
+            skip_shared_tables: skip shared tables from processing
 
         Returns:
 
@@ -168,11 +171,39 @@ class ViewCreator:
 
             self._snowflake_client.create_if_not_exist_schema(destination_database, destination_schema)
             for table in tables_resp:
+                # update tale def according to alias
+                source_table = self._handle_alias(table)
+                # skip shared tables if requested
+                if source_table.get('is_shared') and skip_shared_tables:
+                    continue
+
                 table_name = table['name']
                 table_columns = self._get_table_columns(table)
 
-                self._create_view_in_external_db(bucket_id, table_name, table_columns, destination_database,
+                self._create_view_in_external_db(bucket_id, table_name, source_table, table_columns,
+                                                 destination_database,
                                                  view_name_case, column_name_case, use_bucket_alias)
+
+    def _handle_alias(self, table: dict):
+        """
+        Retrieves source table of alias if present and changes the ROLE to appropriate source project
+        Args:
+            table:
+
+        Returns:
+
+        """
+        source_table = {}
+        if table['isAlias']:
+            source_table = table['sourceTable']
+            source_table['bucket_id'] = '.'.join(source_table['id'].split('.')[0:2])
+            source_table['table_name'] = '.'.join(source_table['id'].split('.')[-1:])
+
+        if table['isAlias'] and source_table['project']['id'] != int(self._project_id):
+            # it is shared bucket, change role to source project
+            source_table['is_shared'] = True
+
+        return source_table
 
     @lru_cache(maxsize=100)
     def _get_destination_schema_name(self, bucket_id, use_alias=True):
@@ -183,21 +214,45 @@ class ViewCreator:
             view_name = bucket_id
         return view_name
 
-    def _create_view_in_external_db(self, bucket_id: str, table_name: str, table_columns: Dict[str, StorageDataType],
+    def _create_view_in_external_db(self, bucket_id: str, table_name: str, source_table: dict,
+                                    table_columns: Dict[str, StorageDataType],
                                     destination_database: str,
                                     view_name_case: str = 'original',
                                     column_name_case: str = 'original',
                                     use_bucket_alias: bool = True):
+        """
+
+        Args:
+            bucket_id:
+            table_name:
+            source_table: (dict) if not empty defines source of the alias table
+            table_columns:
+            destination_database:
+            view_name_case:
+            column_name_case:
+            use_bucket_alias:
+
+        Returns:
+
+        """
         column_definitions = self._build_column_definitions(table_columns, column_name_case)
 
         destination_schema = self._get_destination_schema_name(bucket_id, use_bucket_alias)
         destination_table = f'"{destination_database}"."{destination_schema}"' \
                             f'."{self._convert_case(table_name, view_name_case)}"'
-        source_table = f'"{self.project_db_name}"."{bucket_id}"."{table_name}"'
+
+        source_table_id = f'"{bucket_id}"."{table_name}"'
+        source_project_id = self._project_id
+        if source_table:
+            source_table["id"].split('.')
+            source_table_id = f'"{source_table["bucket_id"]}"."{source_table["table_name"]}"'
+            source_project_id = source_table['project']['id']
+
+        source_table_identifier = f'"{self.get_project_db_name(source_project_id)}".{source_table_id}'
         columns_definition = f'{column_definitions}, "_timestamp"::TIMESTAMP AS "_timestamp"'
 
-        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table, True)
+        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table_identifier,
+                                                      True)
 
-    @property
-    def project_db_name(self):
-        return f'KEBOOLA_{self._project_id}'
+    def get_project_db_name(self, project_id):
+        return f'KEBOOLA_{project_id}'

@@ -70,6 +70,17 @@
           },
           "default": true,
           "propertyOrder": 30
+        },
+                "ignored_shared_tables": {
+          "type": "boolean",
+          "format": "checkbox",
+          "title": "Ignore shared tables",
+          "description": "Skip shared tables. Enable only if RO role is used and enabled in all projects",
+          "options": {
+            "grid_columns": 4
+          },
+          "default": true,
+          "propertyOrder": 40
         }
       },
       "propertyOrder": 180

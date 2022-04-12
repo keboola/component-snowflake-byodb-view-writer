@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Dict
 
 from kbcstorage.client import Client
@@ -167,8 +166,13 @@ class ViewCreator:
         with self._snowflake_client.connect(self.__snowflake_credentials, session_parameters=session_parameters):
             if self.__snowflake_credentials.role:
                 self._snowflake_client.use_role(self.__snowflake_credentials.role)
+            bucket_detail = self._sapi_client.buckets.detail(bucket_id)
 
-            destination_schema = self._get_destination_schema_name(bucket_id, use_bucket_alias)
+            # skip shared buckets if requested
+            if bucket_detail.get('sourceBucket') and skip_shared_tables:
+                return
+
+            destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias)
 
             self._snowflake_client.create_if_not_exist_schema(destination_database, destination_schema)
             for table in tables_resp:
@@ -181,7 +185,7 @@ class ViewCreator:
                 table_name = table['name']
                 table_columns = self._get_table_columns(table)
 
-                self._create_view_in_external_db(bucket_id, table_name, source_table, table_columns,
+                self._create_view_in_external_db(bucket_detail, table_name, source_table, table_columns,
                                                  destination_database,
                                                  view_name_case, column_name_case, use_bucket_alias)
 
@@ -206,16 +210,15 @@ class ViewCreator:
 
         return source_table
 
-    @lru_cache(maxsize=100)
-    def _get_destination_schema_name(self, bucket_id, use_alias=True):
-        bucket_detail = self._sapi_client.buckets.detail(bucket_id)
+    def _get_destination_schema_name(self, bucket_detail: dict, use_alias=True):
+
         if use_alias:
             view_name = f'{bucket_detail["stage"]}_{bucket_detail["displayName"]}'
         else:
-            view_name = bucket_id
+            view_name = bucket_detail['id']
         return view_name
 
-    def _create_view_in_external_db(self, bucket_id: str, table_name: str, source_table: dict,
+    def _create_view_in_external_db(self, bucket_detail: dict, table_name: str, source_table: dict,
                                     table_columns: Dict[str, StorageDataType],
                                     destination_database: str,
                                     view_name_case: str = 'original',
@@ -224,7 +227,7 @@ class ViewCreator:
         """
 
         Args:
-            bucket_id:
+            bucket_detail:
             table_name:
             source_table: (dict) if not empty defines source of the alias table
             table_columns:
@@ -237,8 +240,8 @@ class ViewCreator:
 
         """
         column_definitions = self._build_column_definitions(table_columns, column_name_case)
-
-        destination_schema = self._get_destination_schema_name(bucket_id, use_bucket_alias)
+        bucket_id = bucket_detail['id']
+        destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias)
         destination_table = f'"{destination_database}"."{destination_schema}"' \
                             f'."{self._convert_case(table_name, view_name_case)}"'
 

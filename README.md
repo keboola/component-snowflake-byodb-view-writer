@@ -12,8 +12,13 @@ Takes all tables in selected bucket and creates views containing datatypes in th
 Functionality notes
 ===================
 
+It is advisable to enable the RO role for the project, so the View creating role has only read access.
+Also, to support shared buckets the RO role must be enabled in both projects, otherwise the component will fail when shared 
+tables are enabled in the configuration.
+
 Prerequisites
 =============
+
 
 Create dedicated user with read access to the KBC project databse and view creation access to the external database:
 
@@ -31,12 +36,14 @@ GRANT USAGE ON DATABASE EXTERNALDB TO ROLE MANAGE_ROLE;
 GRANT CREATE SCHEMA ON DATABASE EXTERNALDB TO ROLE MANAGE_ROLE;
 
 -- assign this role to the existing KBC Project role
-GRANT ROLE MANAGE_ROLE TO ROLE KEBOOLA_5689;
+GRANT ROLE KEBOOLA_5689 TO ROLE MANAGE_ROLE; 
+-- OR GRANT ROLE KEBOOLA_5689_RO TO ROLE MANAGE_ROLE;
+-- if you have RO role enabled.
 
 -- Assign the KBC Project role that owns all objects in the Storage to the user
 -- this is needed because KBC grants ownership to the existing tables. GRANT SELECT ON FUTURE to different role would break it.
 
-GRANT ROLE "KEBOOLA_5689" TO USER "MANAGE_PRJ";
+GRANT ROLE "MANAGE_ROLE" TO USER "MANAGE_PRJ";
 
 
 -- READ ONLY ROLE FOR THE EXTERNAL SCHEMA

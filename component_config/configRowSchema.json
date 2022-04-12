@@ -71,7 +71,7 @@
           "default": true,
           "propertyOrder": 30
         },
-                "ignored_shared_tables": {
+        "ignore_shared_tables": {
           "type": "boolean",
           "format": "checkbox",
           "title": "Ignore shared tables",

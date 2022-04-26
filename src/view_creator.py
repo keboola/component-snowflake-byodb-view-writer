@@ -63,8 +63,8 @@ class ViewCreator:
             if not datatype.length and md_item['key'] == 'KBC.datatype.length':
                 datatype.length = md_item['value']
                 datatype.length_provider = md_item['provider']
-            if datatype.nullable is not None and md_item['key'] == 'KBC.datatype.nullable':
-                datatype.nullable = md_item['value']
+            if md_item['key'] == 'KBC.datatype.nullable':
+                datatype.nullable = bool(md_item['value'])
                 datatype.nullable_provider = md_item['provider']
             # stop if all found
             if datatype.type and datatype.length is not None and datatype.nullable is not None:
@@ -92,7 +92,7 @@ class ViewCreator:
         column_definitions = []
         for name, dtype in table_columns.items():
             # Anything that is not STRING needs to be wrapped in  NULLIF
-            if dtype.type.upper() != 'STRING':
+            if dtype.type.upper() != 'STRING' or dtype.nullable:
                 identifier_name = f'NULLIF("{name}", \'\')'
             else:
                 identifier_name = f'"{name}"'

@@ -50,6 +50,8 @@ class AdditionalOptions(ConfigurationBase):
     column_case: str = 'original'
     view_case: str = 'original'
     use_bucket_alias: bool = True
+    drop_stage_prefix: bool = False
+    use_table_alias: bool = False
     ignore_shared_tables: bool = True
 
 

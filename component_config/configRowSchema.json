@@ -71,6 +71,28 @@
           "default": true,
           "propertyOrder": 30
         },
+        "drop_stage_prefix": {
+          "type": "boolean",
+          "format": "checkbox",
+          "title": "Drop in/out prefix",
+          "description": "Drop in/out prefix from resulting schema name",
+          "options": {
+            "grid_columns": 4
+          },
+          "default": false,
+          "propertyOrder": 32
+        },
+        "use_table_alias": {
+          "type": "boolean",
+          "format": "checkbox",
+          "title": "Use table use defined name",
+          "description": "Use table user defined name in the VIEW name instead of the default name (ID)",
+          "options": {
+            "grid_columns": 4
+          },
+          "default": false,
+          "propertyOrder": 35
+        },
         "ignore_shared_tables": {
           "type": "boolean",
           "format": "checkbox",

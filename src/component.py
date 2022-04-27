@@ -70,6 +70,10 @@ class Component(ComponentBase):
             logging.info('No buckets specified, processing all available buckets')
             bucket_ids = view_creator.get_all_bucket_ids()
 
+        # validate schema names, check for duplicates
+        view_creator.validate_schema_names(bucket_ids, additional_options.use_bucket_alias,
+                                           additional_options.drop_stage_prefix)
+
         for bucket_id in bucket_ids:
             logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
             view_creator.create_views_from_bucket(bucket_id, self._configuration.destination_db,
@@ -77,7 +81,8 @@ class Component(ComponentBase):
                                                   view_name_case=additional_options.view_case,
                                                   use_bucket_alias=additional_options.use_bucket_alias,
                                                   session_id=self.environment_variables.run_id,
-                                                  skip_shared_tables=additional_options.ignore_shared_tables)
+                                                  skip_shared_tables=additional_options.ignore_shared_tables,
+                                                  drop_stage_prefix=additional_options.drop_stage_prefix)
 
     def _get_kbc_root_url(self):
         return f'https://{self.environment_variables.stack_id}'

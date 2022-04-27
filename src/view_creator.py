@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 
 from kbcstorage.client import Client
+from keboola.component import UserException
 
 from dbstorage.snowflake_client import SnowflakeClient, Credentials
 
@@ -132,10 +133,27 @@ class ViewCreator:
     def get_all_bucket_ids(self):
         return [b['id'] for b in self._sapi_client.buckets.list()]
 
+    def validate_schema_names(self, bucket_ids: List[str], use_bucket_alias: bool, drop_stage_prefix: bool):
+        bucket_details = [self._sapi_client.buckets.detail(bucket_id) for bucket_id in bucket_ids]
+        schema_names = [self._get_destination_schema_name(bd, use_bucket_alias, drop_stage_prefix) for bd in
+                        bucket_details]
+        seen = set()
+        duplicates = []
+        for s in schema_names:
+            if s in seen:
+                duplicates.append(s)
+            seen.add(s)
+        if duplicates:
+            raise UserException(f'Current setting would lead to a duplicate schema names. '
+                                f'Try to turn off the "drop stage prefix" or "Use bucket alias" options. '
+                                f'Duplicate schemas:{duplicates} ')
+
     def create_views_from_bucket(self, bucket_id: str, destination_database: str,
                                  view_name_case: str = 'original',
                                  column_name_case: str = 'original',
                                  use_bucket_alias: bool = True,
+                                 drop_stage_prefix: bool = False,
+                                 use_table_alias: bool = False,
                                  session_id: str = '',
                                  skip_shared_tables: bool = True):
         """
@@ -151,7 +169,9 @@ class ViewCreator:
                                     of the identifier
             session_id: Optional ID to use in session ID
             use_bucket_alias: bool: Use bucket alias instead of the Bucket ID for view name
+            use_table_alias: bool: Use user defined table alias instead of the table ID for view name
             skip_shared_tables: skip shared tables from processing
+            drop_stage_prefix: drop bucket stage prefix from schema name
 
         Returns:
 
@@ -172,7 +192,7 @@ class ViewCreator:
             if bucket_detail.get('sourceBucket') and skip_shared_tables:
                 return
 
-            destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias)
+            destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias, drop_stage_prefix)
 
             self._snowflake_client.create_if_not_exist_schema(destination_database, destination_schema)
             for table in tables_resp:
@@ -182,12 +202,12 @@ class ViewCreator:
                 if source_table.get('is_shared') and skip_shared_tables:
                     continue
 
-                table_name = table['name']
                 table_columns = self._get_table_columns(table)
 
-                self._create_view_in_external_db(bucket_detail, table_name, source_table, table_columns,
+                self._create_view_in_external_db(bucket_detail, destination_schema, table, source_table, table_columns,
                                                  destination_database,
-                                                 view_name_case, column_name_case, use_bucket_alias)
+                                                 view_name_case, column_name_case,
+                                                 use_table_alias)
 
     def _handle_alias(self, table: dict):
         """
@@ -210,42 +230,48 @@ class ViewCreator:
 
         return source_table
 
-    def _get_destination_schema_name(self, bucket_detail: dict, use_alias=True):
+    def _get_destination_schema_name(self, bucket_detail: dict, use_alias=True, drop_stage_prefix: bool = False):
 
         if use_alias:
             view_name = f'{bucket_detail["stage"]}_{bucket_detail["displayName"]}'
         else:
-            view_name = bucket_detail['id']
+            view_name = bucket_detail['id'].replace('.', '_')
+        if drop_stage_prefix:
+            view_name = view_name[len(bucket_detail['stage']) + 1:]
+
         return view_name
 
-    def _create_view_in_external_db(self, bucket_detail: dict, table_name: str, source_table: dict,
+    def _create_view_in_external_db(self, bucket_detail: dict, destination_schema_name: str, table: dict,
+                                    source_table: dict,
                                     table_columns: Dict[str, StorageDataType],
                                     destination_database: str,
                                     view_name_case: str = 'original',
                                     column_name_case: str = 'original',
-                                    use_bucket_alias: bool = True):
+                                    use_table_alias: bool = False):
         """
 
         Args:
-            bucket_detail:
-            table_name:
+            bucket_detail: detail of the source bucket
+            destination_schema_name: name of the destination schema
+            table: detail of the storage table
             source_table: (dict) if not empty defines source of the alias table
             table_columns:
             destination_database:
             view_name_case:
             column_name_case:
-            use_bucket_alias:
+            use_table_alias: Use user defined table name
 
         Returns:
 
         """
         column_definitions = self._build_column_definitions(table_columns, column_name_case)
         bucket_id = bucket_detail['id']
-        destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias)
-        destination_table = f'"{destination_database}"."{destination_schema}"' \
-                            f'."{self._convert_case(table_name, view_name_case)}"'
+        # use display or default name
+        destination_table_name = table['displayName'] if use_table_alias else table['name']
+        destination_table = f'"{destination_database}"."{destination_schema_name}"' \
+                            f'."{self._convert_case(destination_table_name, view_name_case)}"'
 
-        source_table_id = f'"{bucket_id}"."{table_name}"'
+        source_table_id = f'"{bucket_id}"."{table["name"]}"'
         source_project_id = self._project_id
         if source_table:
             source_table["id"].split('.')

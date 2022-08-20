@@ -149,6 +149,7 @@ class ViewCreator:
                                 f'Duplicate schemas:{duplicates} ')
 
     def create_views_from_bucket(self, bucket_id: str, destination_database: str,
+                                 schema_name_case: str = 'original',
                                  view_name_case: str = 'original',
                                  column_name_case: str = 'original',
                                  use_bucket_alias: bool = True,
@@ -165,6 +166,9 @@ class ViewCreator:
                                     'original' to keep the case unchanged, 'upper'/'lower' to force the case
                                     of the identifier
             view_name_case: str: Modifies the case of the VIEW name identifier.
+                                    'original' to keep the case unchanged, 'upper'/'lower' to force the case
+                                    of the identifier
+            schema_name_case: str: Modifies the case of the SCHEMA name identifier.
                                     'original' to keep the case unchanged, 'upper'/'lower' to force the case
                                     of the identifier
             session_id: Optional ID to use in session ID
@@ -194,7 +198,8 @@ class ViewCreator:
 
             destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias, drop_stage_prefix)
 
-            self._snowflake_client.create_if_not_exist_schema(destination_database, destination_schema)
+            self._snowflake_client.create_if_not_exist_schema(destination_database,
+                                                              self._convert_case(destination_schema, schema_name_case))
             for table in tables_resp:
                 # update tale def according to alias
                 source_table = self._handle_alias(table)
@@ -206,7 +211,7 @@ class ViewCreator:
 
                 self._create_view_in_external_db(bucket_detail, destination_schema, table, source_table, table_columns,
                                                  destination_database,
-                                                 view_name_case, column_name_case,
+                                                 schema_name_case, view_name_case, column_name_case,
                                                  use_table_alias)
 
     def _handle_alias(self, table: dict):
@@ -245,6 +250,7 @@ class ViewCreator:
                                     source_table: dict,
                                     table_columns: Dict[str, StorageDataType],
                                     destination_database: str,
+                                    schema_name_case: str = 'original',
                                     view_name_case: str = 'original',
                                     column_name_case: str = 'original',
                                     use_table_alias: bool = False):
@@ -258,6 +264,7 @@ class ViewCreator:
             table_columns:
             destination_database:
             view_name_case:
+            schema_name_case:
             column_name_case:
             use_table_alias: Use user defined table name
 
@@ -268,7 +275,8 @@ class ViewCreator:
         bucket_id = bucket_detail['id']
         # use display or default name
         destination_table_name = table['displayName'] if use_table_alias else table['name']
-        destination_table = f'"{destination_database}"."{destination_schema_name}"' \
+        destination_table = f'"{destination_database}"' \
+                            f'."{self._convert_case(destination_schema_name, schema_name_case)}"' \
                             f'."{self._convert_case(destination_table_name, view_name_case)}"'
 
         source_table_id = f'"{bucket_id}"."{table["name"]}"'

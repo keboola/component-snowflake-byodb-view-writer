@@ -79,6 +79,7 @@ class Component(ComponentBase):
             view_creator.create_views_from_bucket(bucket_id, self._configuration.destination_db,
                                                   column_name_case=additional_options.column_case,
                                                   view_name_case=additional_options.view_case,
+                                                  schema_name_case=additional_options.schema_case,
                                                   use_bucket_alias=additional_options.use_bucket_alias,
                                                   use_table_alias=additional_options.use_table_alias,
                                                   session_id=self.environment_variables.run_id,

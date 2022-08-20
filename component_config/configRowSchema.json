@@ -44,7 +44,7 @@
             "grid_columns": 4
           },
           "default": "original",
-          "propertyOrder": 10
+          "propertyOrder": 25
         },
         "view_case": {
           "type": "string",
@@ -59,6 +59,20 @@
           },
           "default": "original",
           "propertyOrder": 20
+        },
+        "schema_case": {
+          "type": "string",
+          "title": "Schema Case",
+          "enum": [
+            "original",
+            "upper",
+            "lower"
+          ],
+          "options": {
+            "grid_columns": 4
+          },
+          "default": "original",
+          "propertyOrder": 10
         },
         "use_bucket_alias": {
           "type": "boolean",

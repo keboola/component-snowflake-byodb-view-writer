@@ -80,6 +80,7 @@ class Component(ComponentBase):
                                                   column_name_case=additional_options.column_case,
                                                   view_name_case=additional_options.view_case,
                                                   use_bucket_alias=additional_options.use_bucket_alias,
+                                                  use_table_alias=additional_options.use_table_alias,
                                                   session_id=self.environment_variables.run_id,
                                                   skip_shared_tables=additional_options.ignore_shared_tables,
                                                   drop_stage_prefix=additional_options.drop_stage_prefix)

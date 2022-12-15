@@ -23,12 +23,14 @@ class ViewCreator:
                  snowflake_credentials: Credentials,
                  kbc_root_url: str,
                  storage_token: str,
-                 project_id: str):
+                 project_id: str,
+                 system_name_prefix: str = 'KEBOOLA_'):
 
         self._snowflake_client = SnowflakeClient()
         self.__snowflake_credentials = snowflake_credentials
         self._sapi_client = Client(kbc_root_url, storage_token)
         self._project_id = project_id
+        self._system_name_prefix = system_name_prefix
         self._current_project_id = project_id
 
     def _group_by_timestamp(self, data: dict):
@@ -293,4 +295,4 @@ class ViewCreator:
                                                       True)
 
     def get_project_db_name(self, project_id):
-        return f'KEBOOLA_{project_id}'
+        return f'{self._system_name_prefix}{project_id}'

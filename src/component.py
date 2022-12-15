@@ -61,7 +61,8 @@ class Component(ComponentBase):
                                                role=self._configuration.role),
                                    self._get_kbc_root_url(),
                                    storage_token,
-                                   self.environment_variables.project_id)
+                                   self.environment_variables.project_id,
+                                   system_name_prefix=self._configuration.db_name_prefix)
 
         additional_options = self._configuration.additional_options or configuration.AdditionalOptions()
 

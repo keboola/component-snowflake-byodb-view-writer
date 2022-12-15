@@ -48,7 +48,7 @@
       "type": "string",
       "title": "DB Name Prefix",
       "default": "KEBOOLA_",
-      "description": "Keboola generated DB names are formed as {PREFIX}{PROJECT_ID}. The prefixes can differ based on BYODB deployment, setup. Typically KEBOOLA_ or SAPI_",
+      "description": "Keboola generated DB names are formed as {PREFIX}{PROJECT_ID}. The prefixes can differ based on BYODB deployment setup. Typically KEBOOLA_ or SAPI_",
       "propertyOrder": 160
     }
   }

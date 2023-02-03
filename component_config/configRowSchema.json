@@ -17,9 +17,18 @@
       "title": "Storage Bucket IDs",
       "description": "Storage Bucket IDs. If left empty, all buckets in the project will be used.",
       "items": {
+        "enum": [],
         "type": "string",
         "minLength": 5,
         "title": "Bucket ID"
+      },
+      "format": "select",
+      "uniqueItems": true,
+      "options": {
+        "async": {
+          "label": "Re-load buckets",
+          "action": "get_buckets"
+        }
       },
       "propertyOrder": 170
     },

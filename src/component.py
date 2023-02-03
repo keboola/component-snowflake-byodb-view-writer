@@ -2,8 +2,14 @@
 Template Component main class.
 
 '''
+import contextlib
+import json
 import logging
+import sys
+from functools import wraps
+from typing import List
 
+from kbcstorage.client import Client
 from keboola.component.base import ComponentBase
 from keboola.component.exceptions import UserException
 
@@ -20,6 +26,56 @@ KEY_PRINT_HELLO = 'print_hello'
 # component will fail with readable message on initialization.
 REQUIRED_PARAMETERS = [KEY_PRINT_HELLO]
 REQUIRED_IMAGE_PARS = []
+
+# Mapping of sync actions "action name":"method_name"
+_SYNC_ACTION_MAPPING = {"run": "run"}
+
+
+def sync_action(action_name: str):
+    def decorate(func):
+        # to allow pythonic names / action name mapping
+        if action_name == 'run':
+            raise UserException('Sync action name "run" is reserved base action! Use different name.')
+        _SYNC_ACTION_MAPPING[action_name] = func.__name__
+
+        @wraps(func)
+        def action_wrapper(self, *args, **kwargs):
+            # override when run as sync action, because it could be also called normally within run
+            is_sync_action = self.configuration.action != 'run'
+
+            # do operations with func
+            if is_sync_action:
+                stdout_redirect = None
+                # mute logging just in case
+                logging.getLogger().setLevel(logging.FATAL)
+            else:
+                stdout_redirect = sys.stdout
+            try:
+                # when success, only specified message can be on output, so redirect stdout before.
+                with contextlib.redirect_stdout(stdout_redirect):
+                    result = func(self, *args, **kwargs)
+
+                if is_sync_action:
+                    # sync action expects valid JSON in stdout on success.
+                    if result:
+                        # expect array or object:
+                        sys.stdout.write(json.dumps(result))
+                    else:
+                        sys.stdout.write(json.dumps({'status': 'success'}))
+
+                return result
+
+            except Exception as e:
+                if is_sync_action:
+                    # sync actions expect stderr
+                    sys.stderr.write(str(e))
+                    exit(1)
+                else:
+                    raise e
+
+        return action_wrapper
+
+    return decorate
 
 
 class Component(ComponentBase):
@@ -53,7 +109,7 @@ class Component(ComponentBase):
         self._init_configuration()
 
         # config token support
-        storage_token = self.configuration.parameters.get('#storage_token') or self.environment_variables.token
+        storage_token = self._get_storage_token()
         view_creator = ViewCreator(Credentials(account=self._configuration.account,
                                                user=self._configuration.username,
                                                password=self._configuration.pswd_password,
@@ -87,8 +143,44 @@ class Component(ComponentBase):
                                                   skip_shared_tables=additional_options.ignore_shared_tables,
                                                   drop_stage_prefix=additional_options.drop_stage_prefix)
 
+    @sync_action('get_buckets')
+    def get_available_buckets(self) -> List[dict]:
+        """
+        Sync action for getting list of available buckets
+        Returns:
+
+        """
+        sapi_client = Client(self._get_kbc_root_url(), self._get_storage_token())
+
+        buckets = sapi_client.buckets.list()
+        return [{'value': b['id'], 'label': f'({b["stage"]}) {b["name"]}'} for b in buckets]
+
     def _get_kbc_root_url(self):
         return f'https://{self.environment_variables.stack_id}'
+
+    # overriden base
+    def execute_action(self):
+        """
+        Executes action defined in the configuration.
+        The default action is 'run'.
+        """
+        action = self.configuration.action
+        if not action:
+            logging.warning("No action defined in the configuration, using the default run action.")
+            action = 'run'
+
+        try:
+            # apply action mapping
+            if action != 'run':
+                action = _SYNC_ACTION_MAPPING[action]
+
+            action_method = getattr(self, action)
+        except (AttributeError, KeyError) as e:
+            raise AttributeError(f"The defined action {action} is not implemented!") from e
+        return action_method()
+
+    def _get_storage_token(self) -> str:
+        return self.configuration.parameters.get('#storage_token') or self.environment_variables.token
 
 
 """

@@ -14,8 +14,8 @@
     },
     "bucket_ids": {
       "type": "array",
-      "title": "Storage Bucket IDs",
-      "description": "Storage Bucket IDs. If left empty, all buckets in the project will be used.",
+      "title": "Storage Buckets",
+      "description": "Storage Buckets. If left empty, all buckets in the project will be used.",
       "items": {
         "enum": [],
         "type": "string",

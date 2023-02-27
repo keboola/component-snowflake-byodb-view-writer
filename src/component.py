@@ -128,8 +128,12 @@ class Component(ComponentBase):
             bucket_ids = view_creator.get_all_bucket_ids()
 
         # validate schema names, check for duplicates
+        # validate schema mapping
+        self._configuration.validate_schema_mapping(bucket_ids)
+        schema_mapping = self._configuration.schema_mapping
+
         view_creator.validate_schema_names(bucket_ids, additional_options.use_bucket_alias,
-                                           additional_options.drop_stage_prefix)
+                                           additional_options.drop_stage_prefix, schema_mapping)
 
         for bucket_id in bucket_ids:
             logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
@@ -141,7 +145,8 @@ class Component(ComponentBase):
                                                   use_table_alias=additional_options.use_table_alias,
                                                   session_id=self.environment_variables.run_id,
                                                   skip_shared_tables=additional_options.ignore_shared_tables,
-                                                  drop_stage_prefix=additional_options.drop_stage_prefix)
+                                                  drop_stage_prefix=additional_options.drop_stage_prefix,
+                                                  schema_mapping=schema_mapping)
 
     @sync_action('get_buckets')
     def get_available_buckets(self) -> List[dict]:

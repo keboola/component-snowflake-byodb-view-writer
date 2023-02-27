@@ -31,7 +31,7 @@ class ConfigurationBase:
         """
         json_conf = json.dumps(configuration)
         json_conf = ConfigurationBase._convert_private_value(json_conf)
-        return dataconf.loads(json_conf, Configuration)
+        return dataconf.loads(json_conf, Configuration, ignore_unexpected=True)
 
     @classmethod
     def get_dataclass_required_parameters(cls) -> List[str]:

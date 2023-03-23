@@ -3,7 +3,7 @@
   "title": "extractor configuration",
   "required": [
     "destination_db",
-    "schema_mapping"
+    "bucket_ids"
   ],
   "properties": {
     "destination_db": {

@@ -30,7 +30,52 @@
           "action": "get_buckets"
         }
       },
-      "propertyOrder": 170
+      "propertyOrder": 161
+    },
+    "custom_schema_mapping": {
+      "type": "boolean",
+      "title": "Custom schema mapping",
+      "default": false,
+      "description": "Map buckets to custom schemas",
+      "required": true,
+      "format": "checkbox",
+      "propertyOrder": 162
+    },
+    "schema_mapping": {
+      "type": "array",
+      "format": "table",
+      "uniqueItems": true,
+      "options": {
+        "dependencies": {
+          "custom_schema_mapping": true
+        }
+      },
+      "items": {
+        "type": "object",
+        "title": "Mapping",
+        "required": [
+          "bucket_id",
+          "destination_schema"
+        ],
+        "properties": {
+          "bucket_id": {
+            "type": "string",
+            "title": "Storage Bucket",
+            "watch": {
+              "bid": "bucket_ids"
+            },
+            "enumSource": "bid",
+            "propertyOrder": 1
+          },
+          "destination_schema": {
+            "type": "string",
+            "title": "Destination Schema",
+            "propertyOrder": 100
+          }
+        }
+      },
+      "title": "Schema Mapping",
+      "propertyOrder": 163
     },
     "additional_options": {
       "type": "object",
@@ -41,6 +86,17 @@
         "view_case"
       ],
       "properties": {
+        "schema_display_helper": {
+          "type": "string",
+          "description": "Helper dummy element to render schema related options",
+          "template": "{{val}}",
+          "watch": {
+            "val": "custom_schema_mapping"
+          },
+          "options": {
+            "hidden": true
+          }
+        },
         "column_case": {
           "type": "string",
           "title": "Column case",
@@ -71,6 +127,7 @@
         },
         "schema_case": {
           "type": "string",
+          "required": true,
           "title": "Schema Case",
           "enum": [
             "original",
@@ -78,7 +135,10 @@
             "lower"
           ],
           "options": {
-            "grid_columns": 4
+            "grid_columns": 4,
+            "dependencies": {
+              "schema_display_helper": "false"
+            }
           },
           "default": "original",
           "propertyOrder": 10
@@ -89,7 +149,10 @@
           "title": "Use bucket alias",
           "description": "Use bucket alias (user defined name) in the VIEW name instead of the Bucket ID",
           "options": {
-            "grid_columns": 4
+            "grid_columns": 4,
+            "dependencies": {
+              "schema_display_helper": "false"
+            }
           },
           "default": true,
           "propertyOrder": 30
@@ -100,7 +163,10 @@
           "title": "Drop in/out prefix",
           "description": "Drop in/out prefix from resulting schema name",
           "options": {
-            "grid_columns": 4
+            "grid_columns": 4,
+            "dependencies": {
+              "schema_display_helper": "false"
+            }
           },
           "default": false,
           "propertyOrder": 32

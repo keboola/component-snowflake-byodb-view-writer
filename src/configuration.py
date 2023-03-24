@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 import dataconf
+from keboola.component import UserException
 
 
 class ConfigurationBase:
@@ -57,6 +58,12 @@ class AdditionalOptions(ConfigurationBase):
 
 
 @dataclass
+class SchemaMapping(ConfigurationBase):
+    bucket_id: str
+    destination_schema: str
+
+
+@dataclass
 class Configuration(ConfigurationBase):
     # Connection options
     account: str
@@ -68,6 +75,21 @@ class Configuration(ConfigurationBase):
     # Row configuration
     bucket_ids: List[str]
     additional_options: Optional[AdditionalOptions] = None
+    schema_mapping: List[SchemaMapping] = None
     debug: bool = False
     pswd_storage_token: str = False
     db_name_prefix: str = 'KEBOOLA_'
+
+    def validate_schema_mapping(self, bucket_ids: List[str]):
+        """
+        Validates schema mapping based on provided list of valid bucket IDs
+        Args:
+            bucket_ids: Valid bucket ids.
+
+        Returns:
+
+        """
+        invalid_mapping = [m.bucket_id for m in self.schema_mapping if m.bucket_id not in bucket_ids]
+        if self.schema_mapping and invalid_mapping:
+            raise UserException(f"Some bucket names are invalid in the schema mapping: {invalid_mapping}. "
+                                f"Please use on of the selected buckets: {bucket_ids}")

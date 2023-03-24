@@ -4,6 +4,7 @@ from typing import Dict, List
 from kbcstorage.client import Client
 from keboola.component import UserException
 
+from configuration import SchemaMapping
 from dbstorage.snowflake_client import SnowflakeClient, Credentials
 
 
@@ -135,9 +136,22 @@ class ViewCreator:
     def get_all_bucket_ids(self):
         return [b['id'] for b in self._sapi_client.buckets.list()]
 
-    def validate_schema_names(self, bucket_ids: List[str], use_bucket_alias: bool, drop_stage_prefix: bool):
+    def validate_schema_names(self, bucket_ids: List[str], use_bucket_alias: bool, drop_stage_prefix: bool,
+                              schema_mapping: List[SchemaMapping] = None):
+        """
+        Validates schema names to prevent duplicates in the destination.
+        Args:
+            bucket_ids:
+            use_bucket_alias:
+            drop_stage_prefix:
+            schema_mapping: List[configuration.SchemaMapping]:
+
+        Returns:
+
+        """
         bucket_details = [self._sapi_client.buckets.detail(bucket_id) for bucket_id in bucket_ids]
-        schema_names = [self._get_destination_schema_name(bd, use_bucket_alias, drop_stage_prefix) for bd in
+        schema_names = [self._get_destination_schema_name(bd, use_bucket_alias, drop_stage_prefix, schema_mapping) for
+                        bd in
                         bucket_details]
         seen = set()
         duplicates = []
@@ -158,7 +172,8 @@ class ViewCreator:
                                  drop_stage_prefix: bool = False,
                                  use_table_alias: bool = False,
                                  session_id: str = '',
-                                 skip_shared_tables: bool = True):
+                                 skip_shared_tables: bool = True,
+                                 schema_mapping: List[SchemaMapping] = None):
         """
         Creates views with datatypes for all tables in the bucket.
         Args:
@@ -178,6 +193,8 @@ class ViewCreator:
             use_table_alias: bool: Use user defined table alias instead of the table ID for view name
             skip_shared_tables: skip shared tables from processing
             drop_stage_prefix: drop bucket stage prefix from schema name
+            schema_mapping: List[SchemaMapping]: List of bucket/schema mappings.
+                                                 If specified, other schema related parameters are ignored.
 
         Returns:
 
@@ -198,7 +215,8 @@ class ViewCreator:
             if bucket_detail.get('sourceBucket') and skip_shared_tables:
                 return
 
-            destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias, drop_stage_prefix)
+            destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias, drop_stage_prefix,
+                                                                   schema_mapping)
 
             self._snowflake_client.create_if_not_exist_schema(destination_database,
                                                               self._convert_case(destination_schema, schema_name_case))
@@ -237,16 +255,31 @@ class ViewCreator:
 
         return source_table
 
-    def _get_destination_schema_name(self, bucket_detail: dict, use_alias=True, drop_stage_prefix: bool = False):
+    def _get_destination_schema_name(self, bucket_detail: dict, use_alias=True, drop_stage_prefix: bool = False,
+                                     schema_mapping: List[SchemaMapping] = None):
+        """
+        Generates destination schema name based on parameters
+        Args:
+            bucket_detail:
+            use_alias:
+            drop_stage_prefix:
+            schema_mapping: List[SchemaMapping]: If specified, other parameters are ignored.
 
-        if use_alias:
-            view_name = f'{bucket_detail["stage"]}_{bucket_detail["displayName"]}'
+        Returns:
+
+        """
+        # build name from mapping if specified
+        if schema_mapping and any([mapping := m for m in schema_mapping if m.bucket_id == bucket_detail['id']]):
+            schema_name = mapping.destination_schema
         else:
-            view_name = bucket_detail['id'].replace('.', '_')
-        if drop_stage_prefix:
-            view_name = view_name[len(bucket_detail['stage']) + 1:]
+            if use_alias:
+                schema_name = f'{bucket_detail["stage"]}_{bucket_detail["displayName"]}'
+            else:
+                schema_name = bucket_detail['id'].replace('.', '_')
+            if drop_stage_prefix:
+                schema_name = schema_name[len(bucket_detail['stage']) + 1:]
 
-        return view_name
+        return schema_name
 
     def _create_view_in_external_db(self, bucket_detail: dict, destination_schema_name: str, table: dict,
                                     source_table: dict,

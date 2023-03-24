@@ -89,8 +89,7 @@ class Configuration(ConfigurationBase):
         Returns:
 
         """
-        if self.schema_mapping and any(invalid_mapping := [m.bucket_id for
-                                                           m in self.schema_mapping if
-                                                           m.bucket_id not in bucket_ids]):
+        invalid_mapping = [m.bucket_id for m in self.schema_mapping if m.bucket_id not in bucket_ids]
+        if self.schema_mapping and invalid_mapping:
             raise UserException(f"Some bucket names are invalid in the schema mapping: {invalid_mapping}. "
                                 f"Please use on of the selected buckets: {bucket_ids}")

@@ -103,7 +103,7 @@ class ViewCreator:
 
             column_def = f'{identifier_name}::{dtype.type}'
             # Only NUMERIC types can have length
-            if dtype.length and dtype.type.upper() in ['NUMERIC']:
+            if dtype.length and dtype.type.upper() in ['NUMERIC', 'STRING']:
                 column_def += f'({dtype.length})'
             column_def += f' AS "{self._convert_case(name, column_name_case)}"'
             column_definitions.append(column_def)

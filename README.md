@@ -16,6 +16,11 @@ It is advisable to enable the RO role for the project, so the View creating role
 Also, to support shared buckets the RO role must be enabled in both projects, otherwise the component will fail when shared 
 tables are enabled in the configuration.
 
+Following diagram depicts the workflow of the component:
+
+![diagram](images/diagram.png)
+
+
 Prerequisites
 =============
 

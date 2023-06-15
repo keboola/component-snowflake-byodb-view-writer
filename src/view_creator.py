@@ -248,6 +248,8 @@ class ViewCreator:
             source_table = table['sourceTable']
             source_table['bucket_id'] = '.'.join(source_table['id'].split('.')[0:2])
             source_table['table_name'] = '.'.join(source_table['id'].split('.')[-1:])
+            # FIX we want to use source table metadata, there are none on alias
+            table['columnMetadata'] = source_table['columnMetadata']
 
         if table['isAlias'] and source_table['project']['id'] != int(self._project_id):
             # it is shared bucket, change role to source project

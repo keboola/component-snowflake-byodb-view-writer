@@ -77,7 +77,7 @@ class Configuration(ConfigurationBase):
     additional_options: Optional[AdditionalOptions] = None
     schema_mapping: List[SchemaMapping] = dataclasses.field(default_factory=list)
     debug: bool = False
-    pswd_storage_token: str = False
+    pswd_storage_token: str = ''
     db_name_prefix: str = 'KEBOOLA_'
 
     def validate_schema_mapping(self, bucket_ids: List[str]):

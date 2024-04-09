@@ -308,7 +308,8 @@ class ViewCreator:
         Returns:
 
         """
-        column_definitions = self._build_column_definitions(table_columns, column_name_case, table['isTyped'])
+        column_definitions = self._build_column_definitions(table_columns, column_name_case,
+                                                            table.get('isTyped', False))
         bucket_id = bucket_detail['id']
         # use display or default name
         destination_table_name = table['displayName'] if use_table_alias else table['name']

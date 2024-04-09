@@ -91,12 +91,12 @@ class ViewCreator:
 
         return column_datatypes
 
-    def _build_column_definitions(self, table_columns: Dict[str, StorageDataType],
-                                  column_name_case: str = 'original') -> str:
+    def _build_column_definitions(self, table_columns: Dict[str, StorageDataType], column_name_case: str = 'original',
+                                  is_native_typed: bool = False) -> str:
         column_definitions = []
         for name, dtype in table_columns.items():
             # Anything that is not STRING needs to be wrapped in  NULLIF
-            if dtype.type.upper() != 'STRING' or dtype.nullable:
+            if not is_native_typed and (dtype.type.upper() != 'STRING' or dtype.nullable):
                 identifier_name = f'NULLIF("{name}", \'\')'
             else:
                 identifier_name = f'"{name}"'
@@ -308,7 +308,8 @@ class ViewCreator:
         Returns:
 
         """
-        column_definitions = self._build_column_definitions(table_columns, column_name_case)
+        column_definitions = self._build_column_definitions(table_columns, column_name_case,
+                                                            table.get('isTyped', False))
         bucket_id = bucket_detail['id']
         # use display or default name
         destination_table_name = table['displayName'] if use_table_alias else table['name']

@@ -3,6 +3,7 @@ Template Component main class.
 
 '''
 import logging
+import traceback
 from typing import List
 
 from kbcstorage.client import Client
@@ -126,5 +127,8 @@ if __name__ == "__main__":
         logging.exception(exc)
         exit(1)
     except Exception as exc:
+        logging.error("app error")
+        traceback.print_exc()
+        logging.error(exc)
         logging.exception(exc)
         exit(2)

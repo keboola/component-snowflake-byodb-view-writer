@@ -2,6 +2,7 @@ import functools
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
+from cryptography.hazmat.primitives import serialization
 
 import snowflake
 from snowflake.connector import SnowflakeConnection
@@ -12,7 +13,9 @@ from snowflake.connector.cursor import SnowflakeCursor
 class Credentials:
     account: str
     user: str
-    password: str
+    password: str = None
+    private_key: str = None
+    private_key_passphrase: str = None
     warehouse: str
     database: str = None
     schema: str = None
@@ -56,10 +59,37 @@ class SnowflakeClient:
                 session_parameters = {}
             cfg = asdict(credentials_obj)
             cfg['session_parameters'] = session_parameters
-            self.__connection = snowflake.connector.connect(**cfg)
+            self.__connection = self._create_snfk_connection(**cfg)
             yield self
         finally:
             self.close()
+
+    def _create_snfk_connection(self, config: dict):
+        if config["auth_type"] != 'key_pair':
+            self.__connection = snowflake.connector.connect(
+                user=config["username"],
+                password=config["password"],
+                account=config["host"],
+                database=config["database"],
+                warehouse=config["warehouse"],
+            )
+        else:
+            private_key_pem = config["private_key"].encode('utf-8')
+            passphrase = config["private_key_passphrase"]
+            password = passphrase.encode('utf-8') if passphrase is not None else None
+            private_key = serialization.load_pem_private_key(private_key_pem, password=password)
+            private_key_der = private_key.private_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            )
+            self.__connection = snowflake.connector.connect(
+                user=config["username"],
+                account=config["host"],
+                warehouse=config["warehouse"],
+                private_key=private_key_der,
+                database=config["database"],
+            )
 
     @_check_connection
     def execute_query(self, query):

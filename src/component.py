@@ -5,8 +5,10 @@ Template Component main class.
 import logging
 from typing import List
 
+import snowflake.connector.errors as snowflake_errors
 from kbcstorage.client import Client
 from keboola.component.base import ComponentBase, sync_action
+from keboola.component.sync_actions import ValidationResult, MessageType
 from keboola.component.exceptions import UserException
 # configuration variables
 from keboola.component.sync_actions import SelectElement
@@ -60,6 +62,8 @@ class Component(ComponentBase):
         view_creator = ViewCreator(Credentials(account=self._configuration.account,
                                                user=self._configuration.username,
                                                password=self._configuration.pswd_password,
+                                               private_key=self._configuration.private_key,
+                                               private_key_pass=self._configuration.private_key_pass,
                                                warehouse=self._configuration.warehouse,
                                                role=self._configuration.role),
                                    self._get_kbc_root_url(),
@@ -112,6 +116,30 @@ class Component(ComponentBase):
 
     def _get_storage_token(self) -> str:
         return self.configuration.parameters.get('#storage_token') or self.environment_variables.token
+
+    @sync_action("testConnection")
+    def test_connection(self):
+        try:
+            self._init_configuration()
+            self._snowflake_client = snowflake_client.SnowflakeClient(
+                Credentials(
+                    account=self._configuration.account,
+                    user=self._configuration.username,
+                    password=self._configuration.pswd_password,
+                    private_key=self._configuration.private_key,
+                    private_key_pass=self._configuration.private_key_pass,
+                    warehouse=self._configuration.warehouse,
+                    role=self._configuration.role
+                )
+            )
+            self._snowflake_client.connect()
+            return ValidationResult("Connection successful.", MessageType.SUCCESS)
+
+        except snowflake_errors.Error as e:
+            return ValidationResult(f"Connection failed: {e}", MessageType.WARNING)
+
+        except Exception as e:
+            return ValidationResult(f"Unexpected error: {e}", MessageType.WARNING)
 
 
 """

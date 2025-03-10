@@ -15,41 +15,92 @@
       "format": "password",
       "propertyOrder": 100
     },
+    "auth_type": {
+      "title": "Authentication Type",
+      "type": "string",
+      "enum": [
+          "password",
+          "key_pair"
+      ],
+      "default": "password",
+      "options": {
+          "enum_titles": [
+              "Password",
+              "Key Pair"
+          ]
+      },
+      "propertyOrder": 110
+    },
     "username": {
       "type": "string",
       "title": "User Name",
-      "propertyOrder": 110
+      "propertyOrder": 120
     },
     "#password": {
       "type": "string",
       "title": "Password",
       "format": "password",
-      "propertyOrder": 120
+      "propertyOrder": 130
+    },
+    "#private_key": {
+      "title": "Private Key",
+      "type": "string",
+      "format": "textarea",
+      "description": "Private key used for authentication",
+      "options": {
+          "dependencies": {
+            "auth_type": "key_pair"
+          }
+      },
+      "propertyOrder": 140
+    },
+    "#private_key_passphrase": {
+        "title": "Private Key Passphrase",
+        "type": "string",
+        "format": "password",
+        "description": "Passphrase for the private key",
+        "options": {
+            "dependencies": {
+              "auth_type": "key_pair"
+            }
+        },
+        "propertyOrder": 150
     },
     "account": {
       "type": "string",
       "title": "Account",
       "description": "Snowflake account, e.g. cID.eu-central-1",
-      "propertyOrder": 130
+      "propertyOrder": 160
     },
     "warehouse": {
       "type": "string",
       "title": "Warehouse",
       "description": "Snowflake Warehouse name",
-      "propertyOrder": 140
+      "propertyOrder": 170
     },
     "role": {
       "type": "string",
       "title": "Role",
       "description": "Snowflake role name. If emtpy, default role will be used.",
-      "propertyOrder": 150
+      "propertyOrder": 180
     },
     "db_name_prefix": {
       "type": "string",
       "title": "DB Name Prefix",
       "default": "KEBOOLA_",
       "description": "Keboola generated DB names are formed as {PREFIX}{PROJECT_ID}. The prefixes can differ based on BYODB deployment setup. Typically KEBOOLA_ or SAPI_",
-      "propertyOrder": 160
+      "propertyOrder": 190
+    },
+    "test_connection": {
+      "type": "button",
+      "format": "sync-action",
+      "options": {
+          "async": {
+              "label": "TEST CONNECTION",
+              "action": "testConnection"
+          }
+      },
+      "propertyOrder": 200
     }
   }
 }

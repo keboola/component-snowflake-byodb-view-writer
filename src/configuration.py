@@ -66,13 +66,13 @@ class SchemaMapping(ConfigurationBase):
 @dataclass
 class Configuration(ConfigurationBase):
     # Connection options
-    auth_type: str
-    account: str
-    warehouse: str
-    username: str
-    role: str
-    destination_db: str
-    bucket_ids: List[str]
+    auth_type: str = None
+    account: str = None
+    warehouse: str = None
+    username: str = None
+    role: str = None
+    destination_db: str = None
+    bucket_ids: List[str] = None
     pswd_password: str = None
     private_key: str = None
     private_key_pass: str = None

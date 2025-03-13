@@ -13,10 +13,10 @@ from snowflake.connector.cursor import SnowflakeCursor
 class Credentials:
     account: str
     user: str
+    warehouse: str
     password: str = None
     private_key: str = None
     private_key_passphrase: str = None
-    warehouse: str
     database: str = None
     schema: str = None
     role: str = None

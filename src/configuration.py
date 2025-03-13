@@ -70,13 +70,13 @@ class Configuration(ConfigurationBase):
     account: str
     warehouse: str
     username: str
-    pswd_password: str = None
     role: str
     destination_db: str
+    bucket_ids: List[str]
+    pswd_password: str = None
     private_key: str = None
     private_key_pass: str = None
     # Row configuration
-    bucket_ids: List[str]
     additional_options: Optional[AdditionalOptions] = None
     schema_mapping: List[SchemaMapping] = dataclasses.field(default_factory=list)
     debug: bool = False

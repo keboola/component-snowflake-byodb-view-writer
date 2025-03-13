@@ -121,8 +121,9 @@ class Component(ComponentBase):
     def test_connection(self):
         try:
             self._init_configuration()
-            self._snowflake_client = snowflake_client.SnowflakeClient(
-                Credentials(
+            self._snowflake_client = snowflake_client.SnowflakeClient
+            self._snowflake_client.connect(
+                credentials_obj=Credentials(
                     account=self._configuration.account,
                     user=self._configuration.username,
                     password=self._configuration.pswd_password,
@@ -132,7 +133,6 @@ class Component(ComponentBase):
                     role=self._configuration.role
                 )
             )
-            self._snowflake_client.connect()
             return ValidationResult("Connection successful.", MessageType.SUCCESS)
 
         except snowflake_errors.Error as e:

@@ -22,7 +22,7 @@
           "password",
           "key_pair"
       ],
-      "default": "password",
+      "default": "key_pair",
       "options": {
           "enum_titles": [
               "Password",
@@ -40,6 +40,11 @@
       "type": "string",
       "title": "Password",
       "format": "password",
+      "options": {
+        "dependencies": {
+          "auth_type": "password"
+        }
+      },
       "propertyOrder": 130
     },
     "#private_key": {
@@ -54,7 +59,7 @@
       },
       "propertyOrder": 140
     },
-    "#private_key_passphrase": {
+    "#private_key_pass": {
         "title": "Private Key Passphrase",
         "type": "string",
         "format": "password",

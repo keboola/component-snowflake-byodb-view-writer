@@ -14,12 +14,13 @@ class Credentials:
     account: str
     user: str
     warehouse: str
-    password: str = None
-    private_key: str = None
-    private_key_passphrase: str = None
-    database: str = None
-    schema: str = None
-    role: str = None
+    password: str = ''
+    private_key: str = ''
+    private_key_pass: str = ''
+    database: str = ''
+    schema: str = ''
+    role: str = ''
+    auth_type: str = 'key_pair'
 
 
 class NotConnectedError(Exception):
@@ -60,41 +61,67 @@ class SnowflakeClient:
             cfg = asdict(credentials_obj)
             cfg['session_parameters'] = session_parameters
             self.__connection = self._create_snfk_connection(**cfg)
+            self.__cursor = self.__connection.cursor(snowflake.connector.DictCursor)
             yield self
         finally:
             self.close()
 
-    def _create_snfk_connection(self, config: dict):
-        if config["auth_type"] != 'key_pair':
-            self.__connection = snowflake.connector.connect(
-                user=config["username"],
-                password=config["password"],
-                account=config["host"],
-                database=config["database"],
-                warehouse=config["warehouse"],
-            )
+    def _create_snfk_connection(self, **config):
+        auth_type = config.get("auth_type", "key_pair")
+        logging.info(f"Using authentication type: {auth_type}")
+
+        if auth_type == 'password':
+            try:
+                connection = snowflake.connector.connect(
+                    user=config["user"],
+                    password=config["password"],
+                    account=config["account"],
+                    database=config["database"],
+                    warehouse=config["warehouse"],
+                )
+                logging.info("Snowflake connection created successfully with password authentication")
+                return connection
+            except Exception as e:
+                logging.error("Failed to create Snowflake connection with password: %s", str(e))
+                raise
         else:
             private_key_pem = config["private_key"].encode('utf-8')
-            passphrase = config["private_key_passphrase"]
-            password = passphrase.encode('utf-8') if passphrase is not None else None
-            private_key = serialization.load_pem_private_key(private_key_pem, password=password)
+            raw_passphrase = config.get("private_key_pass")
+
+            if raw_passphrase:
+                passphrase = raw_passphrase.encode('utf-8')
+                private_key = serialization.load_pem_private_key(data=private_key_pem, password=passphrase)
+            else:
+                private_key = serialization.load_pem_private_key(data=private_key_pem, password=None)
+
             private_key_der = private_key.private_bytes(
                 encoding=serialization.Encoding.DER,
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption()
             )
-            self.__connection = snowflake.connector.connect(
-                user=config["username"],
-                account=config["host"],
-                warehouse=config["warehouse"],
-                private_key=private_key_der,
-                database=config["database"],
-            )
+
+            try:
+                connection = snowflake.connector.connect(
+                    user=config["user"],
+                    account=config["account"],
+                    warehouse=config["warehouse"],
+                    private_key=private_key_der,
+                    database=config.get("database", ""),
+                    role=config.get("role", ""),
+                )
+                logging.info("Snowflake connection created successfully with key_pair authentication")
+                return connection
+            except Exception as e:
+                logging.error("Failed to create Snowflake connection with key_pair: %s", str(e))
+                raise
 
     @_check_connection
     def execute_query(self, query):
         logging.debug(f"{query}")
-        self._cursor.execute(query).fetchall()
+        cursor = self._cursor
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
 
     @validate_sql_placeholders
     def create_or_replace_view(self, name, columns_definition: str, source_table: str, copy_grants: bool = False):

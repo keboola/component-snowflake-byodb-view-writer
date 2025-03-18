@@ -20,6 +20,9 @@ from view_creator import ViewCreator
 
 KEY_API_TOKEN = '#api_token'
 KEY_PRINT_HELLO = 'print_hello'
+KEY_PASSWORD = '#password'
+KEY_PRIVATE_KEY = '#private_key'
+KEY_PRIVATE_KEY_PASSPHRASE = '#private_key_passphrase'
 
 # list of mandatory parameters => if some is missing,
 # component will fail with readable message on initialization.
@@ -47,6 +50,9 @@ class Component(ComponentBase):
         self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())
         self._configuration: configuration.Configuration = configuration.Configuration.load_from_dict(
             self.configuration.parameters)
+
+        if self._configuration.pswd_password and self._configuration.pswd_private_key:
+            raise UserException('Only one of password or private key should be provided.')
 
     def run(self):
         """
@@ -117,28 +123,49 @@ class Component(ComponentBase):
     def _get_storage_token(self) -> str:
         return self.configuration.parameters.get('#storage_token') or self.environment_variables.token
 
-    @sync_action("testConnection")
+    @sync_action('testConnection')
     def test_connection(self):
         try:
             self._init_configuration()
-            self._snowflake_client = snowflake_client.SnowflakeClient
-            self._snowflake_client.connect(
-                credentials_obj=Credentials(
+            logging.info("Configuration loaded successfully")
+            self._snowflake_client = snowflake_client.SnowflakeClient()
+            credentials = Credentials(
                     account=self._configuration.account,
                     user=self._configuration.username,
                     password=self._configuration.pswd_password,
-                    private_key=self._configuration.private_key,
-                    private_key_pass=self._configuration.private_key_pass,
+                    private_key=self._configuration.pswd_private_key,
+                    private_key_pass=self._configuration.pswd_private_key_pass,
                     warehouse=self._configuration.warehouse,
-                    role=self._configuration.role
-                )
+                    role=self._configuration.role,
+                    auth_type=self._configuration.auth_type
             )
-            return ValidationResult("Connection successful.", MessageType.SUCCESS)
+            logging.info("Credentials created successfully")
+
+            try:
+                with self._snowflake_client.connect(credentials_obj=credentials) as client:
+                    logging.info("Connected to Snowflake successfully")
+                    try:
+                        result = client.execute_query(
+                            "SELECT CURRENT_USER() as user, CURRENT_ROLE() as role, CURRENT_DATABASE() as database;"
+                        )
+                        logging.info("Query executed successfully")
+                        return ValidationResult(
+                            f"Connection successful. Result: {result}",
+                            MessageType.SUCCESS
+                        )
+                    except Exception as e:
+                        logging.error("Error during query execution: %s", str(e), exc_info=True)
+                        raise
+            except Exception as conn_error:
+                logging.error("Error during connection: %s", str(conn_error), exc_info=True)
+                raise
 
         except snowflake_errors.Error as e:
+            logging.error("Snowflake error: %s", str(e), exc_info=True)
             return ValidationResult(f"Connection failed: {e}", MessageType.WARNING)
 
         except Exception as e:
+            logging.error("Unexpected error: %s", str(e), exc_info=True)
             return ValidationResult(f"Unexpected error: {e}", MessageType.WARNING)
 
 

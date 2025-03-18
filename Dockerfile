@@ -1,8 +1,14 @@
 FROM python:3.11-slim
 ENV PYTHONIOENCODING utf-8
 
-# install gcc to be able to build packages - e.g. required by regex, dateparser, also required for pandas
-RUN apt-get update && apt-get install -y build-essential git
+# install gcc and required libraries
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    libssl-dev \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install flake8
 
 COPY requirements.txt /code/requirements.txt

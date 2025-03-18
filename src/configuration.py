@@ -66,16 +66,16 @@ class SchemaMapping(ConfigurationBase):
 @dataclass
 class Configuration(ConfigurationBase):
     # Connection options
-    auth_type: str = None
-    account: str = None
-    warehouse: str = None
-    username: str = None
-    role: str = None
-    destination_db: str = None
-    bucket_ids: List[str] = None
-    pswd_password: str = None
-    private_key: str = None
-    private_key_pass: str = None
+    auth_type: str = "key_pair"
+    account: str = ''
+    warehouse: str = ''
+    username: str = ''
+    role: str = ''
+    destination_db: str = ''
+    bucket_ids: List[str] = dataclasses.field(default_factory=list)
+    pswd_password: str = ''
+    pswd_private_key: str = ''
+    pswd_private_key_pass: str = ''
     # Row configuration
     additional_options: Optional[AdditionalOptions] = None
     schema_mapping: List[SchemaMapping] = dataclasses.field(default_factory=list)

@@ -68,10 +68,11 @@ class Component(ComponentBase):
         view_creator = ViewCreator(Credentials(account=self._configuration.account,
                                                user=self._configuration.username,
                                                password=self._configuration.pswd_password,
-                                               private_key=self._configuration.private_key,
-                                               private_key_pass=self._configuration.private_key_pass,
+                                               private_key=self._configuration.pswd_private_key,
+                                               private_key_pass=self._configuration.pswd_private_key_pass,
                                                warehouse=self._configuration.warehouse,
-                                               role=self._configuration.role),
+                                               role=self._configuration.role,
+                                               auth_type=self._configuration.auth_type),
                                    self._get_kbc_root_url(),
                                    storage_token,
                                    self.environment_variables.project_id,
@@ -127,7 +128,6 @@ class Component(ComponentBase):
     def test_connection(self):
         try:
             self._init_configuration()
-            logging.info("Configuration loaded successfully")
             self._snowflake_client = snowflake_client.SnowflakeClient()
             credentials = Credentials(
                     account=self._configuration.account,
@@ -139,33 +139,24 @@ class Component(ComponentBase):
                     role=self._configuration.role,
                     auth_type=self._configuration.auth_type
             )
-            logging.info("Credentials created successfully")
-
             try:
                 with self._snowflake_client.connect(credentials_obj=credentials) as client:
-                    logging.info("Connected to Snowflake successfully")
                     try:
-                        result = client.execute_query(
-                            "SELECT CURRENT_USER() as user, CURRENT_ROLE() as role, CURRENT_DATABASE() as database;"
-                        )
-                        logging.info("Query executed successfully")
+                        result = client.execute_query("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();")
                         return ValidationResult(
                             f"Connection successful. Result: {result}",
                             MessageType.SUCCESS
                         )
                     except Exception as e:
-                        logging.error("Error during query execution: %s", str(e), exc_info=True)
-                        raise
+                        return ValidationResult(f"Error during query execution: {e}", MessageType.WARNING)
+
             except Exception as conn_error:
-                logging.error("Error during connection: %s", str(conn_error), exc_info=True)
-                raise
+                return ValidationResult(f"Error during connection: {conn_error}", MessageType.WARNING)
 
         except snowflake_errors.Error as e:
-            logging.error("Snowflake error: %s", str(e), exc_info=True)
             return ValidationResult(f"Connection failed: {e}", MessageType.WARNING)
 
         except Exception as e:
-            logging.error("Unexpected error: %s", str(e), exc_info=True)
             return ValidationResult(f"Unexpected error: {e}", MessageType.WARNING)
 
 

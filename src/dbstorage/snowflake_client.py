@@ -60,13 +60,13 @@ class SnowflakeClient:
                 session_parameters = {}
             cfg = asdict(credentials_obj)
             cfg['session_parameters'] = session_parameters
-            self.__connection = self._create_snfk_connection(**cfg)
+            self.__connection = self._create_snfk_connection(cfg, session_parameters)
             self.__cursor = self.__connection.cursor(snowflake.connector.DictCursor)
             yield self
         finally:
             self.close()
 
-    def _create_snfk_connection(self, **config):
+    def _create_snfk_connection(self, config: dict, session_parameters: dict = None):
         auth_type = config.get("auth_type", "key_pair")
         logging.info(f"Using authentication type: {auth_type}")
 
@@ -78,6 +78,9 @@ class SnowflakeClient:
                     account=config["account"],
                     database=config["database"],
                     warehouse=config["warehouse"],
+                    role=config["role"],
+                    schema=config["schema"],
+                    session_parameters=session_parameters,
                 )
                 logging.info("Snowflake connection created successfully with password authentication")
                 return connection
@@ -108,6 +111,8 @@ class SnowflakeClient:
                     private_key=private_key_der,
                     database=config.get("database", ""),
                     role=config.get("role", ""),
+                    schema=config.get("schema", ""),
+                    session_parameters=session_parameters,
                 )
                 logging.info("Snowflake connection created successfully with key_pair authentication")
                 return connection

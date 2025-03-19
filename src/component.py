@@ -144,11 +144,11 @@ class Component(ComponentBase):
                     try:
                         result = client.execute_query("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();")
                         return ValidationResult(
-                            f"Connection successful. Result: {result}",
+                            f"Connection successful. Test query result: {result}",
                             MessageType.SUCCESS
                         )
                     except Exception as e:
-                        return ValidationResult(f"Error during query execution: {e}", MessageType.WARNING)
+                        return ValidationResult(f"Error during test query execution: {e}", MessageType.WARNING)
 
             except Exception as conn_error:
                 return ValidationResult(f"Error during connection: {conn_error}", MessageType.WARNING)

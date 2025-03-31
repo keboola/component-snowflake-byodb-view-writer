@@ -3,7 +3,6 @@ ENV PYTHONIOENCODING utf-8
 
 # install gcc and required libraries
 RUN apt-get update && apt-get install -y \
-    build-essential \
     git \
     libssl-dev \
     openssl \

@@ -100,9 +100,9 @@ Example Configuration
 ```json
 {
   "auth_type": "password",
+  "account": "xy12345.eu-central-1",
   "username": "MANAGE_PRJ",
   "#password": "your-password",
-  "account": "xy12345.eu-central-1",
   "warehouse": "KEBOOLA_WAREHOUSE",
   "role": "MANAGE_ROLE",
   "db_name_prefix": "KEBOOLA_"
@@ -113,10 +113,10 @@ For key pair authentication:
 ```json
 {
   "auth_type": "key_pair",
+  "account": "xy12345.eu-central-1",
   "username": "MANAGE_PRJ",
   "#private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
   "#private_key_pass": "optional-passphrase",
-  "account": "xy12345.eu-central-1",
   "warehouse": "KEBOOLA_WAREHOUSE",
   "role": "MANAGE_ROLE",
   "db_name_prefix": "KEBOOLA_"

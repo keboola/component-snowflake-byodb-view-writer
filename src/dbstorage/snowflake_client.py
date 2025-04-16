@@ -95,42 +95,68 @@ class SnowflakeClient:
             private_key_pem = config["private_key"].encode("utf-8")
             raw_passphrase = config.get("private_key_pass")
 
-            if raw_passphrase:
-                passphrase = raw_passphrase.encode("utf-8")
-                private_key = serialization.load_pem_private_key(
-                    data=private_key_pem, password=passphrase
+            if private_key_pem:
+                if raw_passphrase:
+                    passphrase = raw_passphrase.encode("utf-8")
+                    private_key = serialization.load_pem_private_key(
+                        data=private_key_pem, password=passphrase
+                    )
+                else:
+                    private_key = serialization.load_pem_private_key(
+                        data=private_key_pem, password=None
+                    )
+
+                private_key_der = private_key.private_bytes(
+                    encoding=serialization.Encoding.DER,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption(),
                 )
+
+                try:
+                    connection = snowflake.connector.connect(
+                        user=config["user"],
+                        account=config["account"],
+                        warehouse=config["warehouse"],
+                        private_key=private_key_der,
+                        database=config.get("database", ""),
+                        role=config.get("role", ""),
+                        schema=config.get("schema", ""),
+                        session_parameters=session_parameters,
+                    )
+                    logging.info(
+                        "Snowflake connection created successfully with key_pair authentication"
+                    )
+                    return connection
+                except Exception as e:
+                    logging.error(
+                        "Failed to create Snowflake connection with key_pair: %s",
+                        str(e),
+                    )
+                    raise
+
+            # for backward compatibility in case of no private key setup yet
             else:
-                private_key = serialization.load_pem_private_key(
-                    data=private_key_pem, password=None
-                )
-
-            private_key_der = private_key.private_bytes(
-                encoding=serialization.Encoding.DER,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-
-            try:
-                connection = snowflake.connector.connect(
-                    user=config["user"],
-                    account=config["account"],
-                    warehouse=config["warehouse"],
-                    private_key=private_key_der,
-                    database=config.get("database", ""),
-                    role=config.get("role", ""),
-                    schema=config.get("schema", ""),
-                    session_parameters=session_parameters,
-                )
-                logging.info(
-                    "Snowflake connection created successfully with key_pair authentication"
-                )
-                return connection
-            except Exception as e:
-                logging.error(
-                    "Failed to create Snowflake connection with key_pair: %s", str(e)
-                )
-                raise
+                try:
+                    connection = snowflake.connector.connect(
+                        user=config["user"],
+                        password=config["password"],
+                        account=config["account"],
+                        database=config["database"],
+                        warehouse=config["warehouse"],
+                        role=config["role"],
+                        schema=config["schema"],
+                        session_parameters=session_parameters,
+                    )
+                    logging.info(
+                        "Snowflake connection created successfully with password authentication"
+                    )
+                    return connection
+                except Exception as e:
+                    logging.error(
+                        "Failed to create Snowflake connection with password: %s",
+                        str(e),
+                    )
+                    raise
 
     @_check_connection
     def execute_query(self, query):

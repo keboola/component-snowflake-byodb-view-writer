@@ -70,7 +70,7 @@ class SnowflakeClient:
         auth_type = config.get("auth_type", "key_pair")
         logging.info(f"Using authentication type: {auth_type}")
 
-        if auth_type == "password":
+        if auth_type != "key_pair" or not config.get("private_key"):
             try:
                 connection = snowflake.connector.connect(
                     user=config["user"],
@@ -110,7 +110,6 @@ class SnowflakeClient:
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
             )
-
             try:
                 connection = snowflake.connector.connect(
                     user=config["user"],
@@ -126,9 +125,11 @@ class SnowflakeClient:
                     "Snowflake connection created successfully with key_pair authentication"
                 )
                 return connection
+
             except Exception as e:
                 logging.error(
-                    "Failed to create Snowflake connection with key_pair: %s", str(e)
+                    "Failed to create Snowflake connection with key_pair: %s",
+                    str(e),
                 )
                 raise
 

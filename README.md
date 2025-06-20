@@ -102,10 +102,10 @@ For authentication the component requires following configuration parameters:
 {
   "auth_type": "password",
   "account": "xy12345.eu-central-1",
-  "username": "MANAGE_PRJ",
+  "username": "<YOUR_USERNAME>",
   "#password": "your-password",
-  "warehouse": "KEBOOLA_WAREHOUSE",
-  "role": "MANAGE_ROLE",
+  "warehouse": "<YOUR_WAREHOUSE>",
+  "role": "<YOUR_ROLE>",
   "db_name_prefix": "KEBOOLA_"
 }
 ```
@@ -115,11 +115,11 @@ For key pair authentication:
 {
   "auth_type": "key_pair",
   "account": "xy12345.eu-central-1",
-  "username": "MANAGE_PRJ",
+  "username": "<YOUR_USERNAME>",
   "#private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
   "#private_key_pass": "optional-passphrase",
-  "warehouse": "KEBOOLA_WAREHOUSE",
-  "role": "MANAGE_ROLE",
+  "warehouse": "<YOUR_WAREHOUSE>",
+  "role": "<YOUR_ROLE>",
   "db_name_prefix": "KEBOOLA_"
 }
 ```
@@ -170,17 +170,13 @@ Other Options:
 ### Example Row Configuration
 ```json
 {
-  "destination_db": "EXTERNAL_DB",
-  "bucket_ids": ["in.c-sales", "in.c-marketing"],
+  "destination_db": "<DESTINATION_DB>",
+  "bucket_ids": ["out.c-analytics"],
   "custom_schema_mapping": true,
   "schema_mapping": [
     {
-      "bucket_id": "in.c-sales",
-      "destination_schema": "SALES_DATA"
-    },
-    {
-      "bucket_id": "in.c-marketing",
-      "destination_schema": "MARKETING_DATA"
+      "bucket_id": "out.c-analyticss",
+      "destination_schema": "ANALYTICS"
     }
   ],
   "additional_options": {

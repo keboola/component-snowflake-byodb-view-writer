@@ -55,7 +55,6 @@ class AdditionalOptions(ConfigurationBase):
     drop_stage_prefix: bool = False
     use_table_alias: bool = False
     ignore_shared_tables: bool = True
-    create_schemas: bool = True
 
 
 @dataclass
@@ -83,6 +82,7 @@ class Configuration(ConfigurationBase):
     debug: bool = False
     pswd_storage_token: str = ""
     db_name_prefix: str = "KEBOOLA_"
+    create_schemas: bool = True
 
     def validate_schema_mapping(self, bucket_ids: list[str]):
         """

@@ -188,13 +188,14 @@ class SnowflakeClient:
             f"SELECT COUNT(*) as count FROM \"{database}\".INFORMATION_SCHEMA.SCHEMATA "
             f"WHERE SCHEMA_NAME = '{schema}'"
         )
-        result = self.execute_query(query)
+        result = self._cursor.execute(query).fetchall()
         logging.debug(f"Validating schema existence with query: {query}")
 
         if not result or result[0]["count"] == 0:
             raise UserException(f"Schema {schema} does not exist in database {database}.")
 
     @validate_sql_placeholders
+    @_check_connection
     def use_warehouse(self, warehouse: str):
         self.execute_query(f"USE WAREHOUSE {warehouse};")
 

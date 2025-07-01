@@ -393,6 +393,9 @@ class ViewCreator:
             UserException: If schema doesn't exist
         """
         try:
+            if self.__snowflake_credentials.warehouse:
+                self._snowflake_client.use_warehouse(self.__snowflake_credentials.warehouse)
+
             result = self._snowflake_client.execute_query(
                 f"SELECT COUNT(*) as count FROM \"{database}\".INFORMATION_SCHEMA.SCHEMATA "
                 f"WHERE SCHEMA_NAME = '{schema}'"

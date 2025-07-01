@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List
 
 from kbcstorage.client import Client
 from keboola.component import UserException
@@ -34,7 +33,7 @@ class ViewCreator:
         self._system_name_prefix = system_name_prefix
         self._current_project_id = project_id
 
-    def _group_by_timestamp(self, data: dict):
+    def _group_by_timestamp(self, data: dict) -> dict:
         result = {}
         # Iterate since end (ordered by latest)
         for d in data[::-1]:
@@ -80,7 +79,7 @@ class ViewCreator:
             datatype = StorageDataType("TEXT")
         return datatype
 
-    def _get_table_columns(self, table_response: dict) -> Dict[str, StorageDataType]:
+    def _get_table_columns(self, table_response: dict) -> dict[str, StorageDataType]:
         columns = table_response["columns"]
         metadata = table_response["columnMetadata"]
 
@@ -93,7 +92,7 @@ class ViewCreator:
 
     def _build_column_definitions(
         self,
-        table_columns: Dict[str, StorageDataType],
+        table_columns: dict[str, StorageDataType],
         column_name_case: str = "original",
         is_native_typed: bool = False,
     ) -> str:
@@ -115,7 +114,7 @@ class ViewCreator:
         return ",".join(column_definitions)
 
     @staticmethod
-    def _convert_case(identifier: str, case_conversion: str = "original"):
+    def _convert_case(identifier: str, case_conversion: str = "original") -> str:
         """
         Modifies the case of the name identifier.
         'original' to keep the case unchanged, 'upper'/'lower' to force the case of the identifier
@@ -138,16 +137,16 @@ class ViewCreator:
             )
         return identifier
 
-    def get_all_bucket_ids(self):
+    def get_all_bucket_ids(self) -> list[str]:
         return [b["id"] for b in self._sapi_client.buckets.list()]
 
     def validate_schema_names(
         self,
-        bucket_ids: List[str],
+        bucket_ids: list[str],
         use_bucket_alias: bool,
         drop_stage_prefix: bool,
-        schema_mapping: List[SchemaMapping] = None,
-    ):
+        schema_mapping: list[SchemaMapping] = None,
+    ) -> None:
         """
         Validates schema names to prevent duplicates in the destination.
         Args:
@@ -189,9 +188,9 @@ class ViewCreator:
         use_table_alias: bool = False,
         session_id: str = "",
         skip_shared_tables: bool = True,
-        schema_mapping: List[SchemaMapping] = None,
+        schema_mapping: list[SchemaMapping] = None,
         create_schemas: bool = True,
-    ):
+    ) -> None:
         """
         Creates views with datatypes for all tables in the bucket.
         Args:
@@ -211,7 +210,7 @@ class ViewCreator:
             use_table_alias: bool: Use user defined table alias instead of the table ID for view name
             skip_shared_tables: skip shared tables from processing
             drop_stage_prefix: drop bucket stage prefix from schema name
-            schema_mapping: List[SchemaMapping]: List of bucket/schema mappings.
+            schema_mapping: list[SchemaMapping]: List of bucket/schema mappings.
                                                  If specified, other schema related parameters are ignored.
             create_schemas: bool: Whether to create schemas if they don't exist
 
@@ -271,7 +270,7 @@ class ViewCreator:
                     use_table_alias,
                 )
 
-    def _handle_alias(self, table: dict):
+    def _handle_alias(self, table: dict) -> dict:
         """
         Retrieves source table of alias if present and changes the ROLE to appropriate source project
         Args:
@@ -299,15 +298,15 @@ class ViewCreator:
         bucket_detail: dict,
         use_alias=True,
         drop_stage_prefix: bool = False,
-        schema_mapping: List[SchemaMapping] = None,
-    ):
+        schema_mapping: list[SchemaMapping] = None,
+    ) -> str:
         """
         Generates destination schema name based on parameters
         Args:
             bucket_detail:
             use_alias:
             drop_stage_prefix:
-            schema_mapping: List[SchemaMapping]: If specified, other parameters are ignored.
+            schema_mapping: list[SchemaMapping]: If specified, other parameters are ignored.
 
         Returns:
 
@@ -331,13 +330,13 @@ class ViewCreator:
         destination_schema_name: str,
         table: dict,
         source_table: dict,
-        table_columns: Dict[str, StorageDataType],
+        table_columns: dict[str, StorageDataType],
         destination_database: str,
         schema_name_case: str = "original",
         view_name_case: str = "original",
         column_name_case: str = "original",
         use_table_alias: bool = False,
-    ):
+    ) -> None:
         """
 
         Args:
@@ -381,10 +380,10 @@ class ViewCreator:
             destination_table, columns_definition, source_table_identifier, True
         )
 
-    def get_project_db_name(self, project_id):
+    def get_project_db_name(self, project_id) -> str:
         return f"{self._system_name_prefix}{project_id}"
 
-    def _validate_schema_exists(self, database: str, schema: str):
+    def _validate_schema_exists(self, database: str, schema: str) -> None:
         """
         Validates that the specified schema exists in the database.
         Args:

@@ -188,7 +188,7 @@ class SnowflakeClient:
             f"SELECT COUNT(*) as count FROM \"{database}\".INFORMATION_SCHEMA.SCHEMATA "
             f"WHERE SCHEMA_NAME = '{schema}'"
         )
-        result = self._cursor.execute(query).fetchall()
+        result = self.execute_query(query)
         logging.debug(f"Validating schema existence with query: {query}")
 
         if not result or result[0]["count"] == 0:

@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives import serialization
 import snowflake
 from snowflake.connector import SnowflakeConnection
 from snowflake.connector.cursor import SnowflakeCursor
+from keboola.component import UserException
 
 
 @dataclass
@@ -180,6 +181,18 @@ class SnowflakeClient:
             copy_grants_query = " COPY GRANTS"
         statement = f'CREATE SCHEMA IF NOT EXISTS "{database}"."{schema_name}"{copy_grants_query};'
         self.execute_query(statement)
+
+    @validate_sql_placeholders
+    def validate_schema_existance(self, database: str, schema: str):
+        query = (
+            f"SELECT COUNT(*) as count FROM \"{database}\".INFORMATION_SCHEMA.SCHEMATA "
+            f"WHERE SCHEMA_NAME = '{schema}'"
+        )
+        result = self.execute_query(query)
+        logging.debug(f"Validating schema existence with query: {query}")
+
+        if not result or result[0]["COUNT"] == 0:
+            raise UserException(f"Schema {schema} does not exist in database {database}.")
 
     @validate_sql_placeholders
     def use_warehouse(self, warehouse: str):

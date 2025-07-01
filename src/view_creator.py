@@ -227,6 +227,9 @@ class ViewCreator:
                 self._snowflake_client.use_role(self.__snowflake_credentials.role)
             bucket_detail = self._sapi_client.buckets.detail(bucket_id)
 
+            if self.__snowflake_credentials.warehouse:
+                self._snowflake_client.use_warehouse(self.__snowflake_credentials.warehouse)
+
             # skip shared buckets if requested
             if bucket_detail.get("sourceBucket") and skip_shared_tables:
                 return
@@ -243,10 +246,9 @@ class ViewCreator:
                 )
             else:
                 # Validate that the schema exists
-                self._validate_schema_exists(
+                self._snowflake_client.validate_schema_existance(
                     destination_database,
-                    self._convert_case(destination_schema, schema_name_case),
-                    session_parameters=session_parameters,
+                    self._convert_case(destination_schema, schema_name_case)
                 )
 
             for table in tables_resp:
@@ -383,29 +385,3 @@ class ViewCreator:
 
     def get_project_db_name(self, project_id) -> str:
         return f"{self._system_name_prefix}{project_id}"
-
-    def _validate_schema_exists(self, database: str, schema: str, session_parameters: dict = None) -> None:
-        """
-        Validates that the specified schema exists in the database.
-        Args:
-            database: Database name
-            schema: Schema name
-        Raises:
-            UserException: If schema doesn't exist
-        """
-        try:
-
-            if self.__snowflake_credentials.warehouse:
-                self._snowflake_client.use_warehouse(self.__snowflake_credentials.warehouse)
-
-            result = self._snowflake_client.execute_query(
-                f"SELECT COUNT(*) as count FROM \"{database}\".INFORMATION_SCHEMA.SCHEMATA "
-                f"WHERE SCHEMA_NAME = '{schema}'"
-            )
-            if not result or result[0]["count"] == 0:
-                raise UserException(
-                    f"Schema '{schema}' does not exist in database '{database}'. "
-                    f"Please create it first or enable 'create_schemas' option."
-                )
-        except Exception as e:
-            raise UserException(f"Error validating schema existence: {e}")

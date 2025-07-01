@@ -45,17 +45,13 @@ class Component(ComponentBase):
         self._snowflake_client: snowflake_client.SnowflakeClient()
 
     def _init_configuration(self):
-        self.validate_configuration_parameters(
-            configuration.Configuration.get_dataclass_required_parameters()
-        )
-        self._configuration: configuration.Configuration = (
-            configuration.Configuration.load_from_dict(self.configuration.parameters)
+        self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())
+        self._configuration: configuration.Configuration = configuration.Configuration.load_from_dict(
+            self.configuration.parameters
         )
 
         if self._configuration.pswd_password and self._configuration.pswd_private_key:
-            raise UserException(
-                "Only one of password or private key should be provided."
-            )
+            raise UserException("Only one of password or private key should be provided.")
 
     def run(self):
         """
@@ -85,9 +81,7 @@ class Component(ComponentBase):
             system_name_prefix=self._configuration.db_name_prefix,
         )
 
-        additional_options = (
-            self._configuration.additional_options or configuration.AdditionalOptions()
-        )
+        additional_options = self._configuration.additional_options or configuration.AdditionalOptions()
 
         bucket_ids = self._configuration.bucket_ids
         if not bucket_ids:
@@ -107,9 +101,7 @@ class Component(ComponentBase):
         )
 
         for bucket_id in bucket_ids:
-            logging.info(
-                f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}"
-            )
+            logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
             view_creator.create_views_from_bucket(
                 bucket_id,
                 self._configuration.destination_db,
@@ -122,6 +114,7 @@ class Component(ComponentBase):
                 skip_shared_tables=additional_options.ignore_shared_tables,
                 drop_stage_prefix=additional_options.drop_stage_prefix,
                 schema_mapping=schema_mapping,
+                create_schemas=additional_options.create_schemas,
             )
 
     @sync_action("get_buckets")
@@ -134,19 +127,13 @@ class Component(ComponentBase):
         sapi_client = Client(self._get_kbc_root_url(), self._get_storage_token())
 
         buckets = sapi_client.buckets.list()
-        return [
-            SelectElement(value=b["id"], label=f"({b['stage']}) {b['name']}")
-            for b in buckets
-        ]
+        return [SelectElement(value=b["id"], label=f"({b['stage']}) {b['name']}") for b in buckets]
 
     def _get_kbc_root_url(self):
         return f"https://{self.environment_variables.stack_id}"
 
     def _get_storage_token(self) -> str:
-        return (
-            self.configuration.parameters.get("#storage_token")
-            or self.environment_variables.token
-        )
+        return self.configuration.parameters.get("#storage_token") or self.environment_variables.token
 
     @sync_action("testConnection")
     def test_connection(self):
@@ -164,13 +151,9 @@ class Component(ComponentBase):
                 auth_type=self._configuration.auth_type,
             )
             try:
-                with self._snowflake_client.connect(
-                    credentials_obj=credentials
-                ) as client:
+                with self._snowflake_client.connect(credentials_obj=credentials) as client:
                     try:
-                        result = client.execute_query(
-                            "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
-                        )
+                        result = client.execute_query("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();")
                         return ValidationResult(
                             f"Connection successful. Test query result: {result}",
                             MessageType.SUCCESS,
@@ -182,9 +165,7 @@ class Component(ComponentBase):
                         )
 
             except Exception as conn_error:
-                return ValidationResult(
-                    f"Error during connection: {conn_error}", MessageType.WARNING
-                )
+                return ValidationResult(f"Error during connection: {conn_error}", MessageType.WARNING)
 
         except snowflake_errors.Error as e:
             return ValidationResult(f"Connection failed: {e}", MessageType.WARNING)

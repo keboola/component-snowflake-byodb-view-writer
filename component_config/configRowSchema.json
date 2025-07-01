@@ -32,6 +32,14 @@
       },
       "propertyOrder": 161
     },
+    "create_schemas": {
+      "type": "boolean",
+      "title": "Create schemas",
+      "default": true,
+      "description": "Create schemas if they don't exist",
+      "format": "checkbox",
+      "propertyOrder": 162
+    },
     "custom_schema_mapping": {
       "type": "boolean",
       "title": "Custom schema mapping",
@@ -39,7 +47,7 @@
       "description": "Map buckets to custom schemas",
       "required": true,
       "format": "checkbox",
-      "propertyOrder": 162
+      "propertyOrder": 163
     },
     "schema_mapping": {
       "type": "array",
@@ -75,7 +83,7 @@
         }
       },
       "title": "Schema Mapping",
-      "propertyOrder": 163
+      "propertyOrder": 164
     },
     "additional_options": {
       "type": "object",

@@ -246,6 +246,7 @@ class ViewCreator:
                 self._validate_schema_exists(
                     destination_database,
                     self._convert_case(destination_schema, schema_name_case),
+                    session_parameters=session_parameters,
                 )
 
             for table in tables_resp:
@@ -383,7 +384,7 @@ class ViewCreator:
     def get_project_db_name(self, project_id) -> str:
         return f"{self._system_name_prefix}{project_id}"
 
-    def _validate_schema_exists(self, database: str, schema: str) -> None:
+    def _validate_schema_exists(self, database: str, schema: str, session_parameters: dict = None) -> None:
         """
         Validates that the specified schema exists in the database.
         Args:
@@ -393,6 +394,7 @@ class ViewCreator:
             UserException: If schema doesn't exist
         """
         try:
+
             if self.__snowflake_credentials.warehouse:
                 self._snowflake_client.use_warehouse(self.__snowflake_credentials.warehouse)
 

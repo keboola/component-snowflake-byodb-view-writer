@@ -182,6 +182,10 @@ class SnowflakeClient:
         self.execute_query(statement)
 
     @validate_sql_placeholders
+    def use_warehouse(self, warehouse: str):
+        self.execute_query(f"USE WAREHOUSE {warehouse};")
+
+    @validate_sql_placeholders
     @_check_connection
     def use_role(self, role: str):
         self.execute_query(f"USE ROLE {role};")

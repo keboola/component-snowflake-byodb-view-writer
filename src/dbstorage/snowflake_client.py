@@ -185,7 +185,7 @@ class SnowflakeClient:
     @validate_sql_placeholders
     def validate_schema_existance(self, database: str, schema: str):
         query = (
-            f"SHOW SCHEMAS IN \"{database}\" LIKE '{schema}'"
+            f"SHOW SCHEMAS IN {database} LIKE '{schema}'"
         )
         result = self.execute_query(query)
         logging.debug(f"Validating schema existence with query: {query}")

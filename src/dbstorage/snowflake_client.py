@@ -185,13 +185,12 @@ class SnowflakeClient:
     @validate_sql_placeholders
     def validate_schema_existance(self, database: str, schema: str):
         query = (
-            f"SELECT COUNT(*) as count FROM \"{database}\".INFORMATION_SCHEMA.SCHEMATA "
-            f"WHERE SCHEMA_NAME = '{schema}'"
+            f"SHOW SCHEMAS IN \"{database}\" LIKE '{schema}'"
         )
         result = self.execute_query(query)
         logging.debug(f"Validating schema existence with query: {query}")
 
-        if not result or result[0]["count"] == 0:
+        if len(result) == 0:
             raise UserException(f"Schema {schema} does not exist in database {database}.")
 
     @validate_sql_placeholders

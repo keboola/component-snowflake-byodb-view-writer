@@ -195,8 +195,11 @@ class SnowflakeClient:
         result = self.execute_query_with_return(query)
         logging.debug(f"Validating schema existence with query: {query}")
 
-        if len(result) == 0:
-            raise UserException(f"Schema {schema} does not exist in database {database}.")
+        if any(row.get("name", "").lower() == schema.lower() for row in result):
+            logging.info(f"Schema {schema} exists in database {database}. Continuing...")
+            return True
+
+        raise UserException(f"Schema {schema} does not exist in database {database}.")
 
     @validate_sql_placeholders
     @_check_connection

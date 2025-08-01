@@ -42,7 +42,7 @@ class Component(ComponentBase):
     def __init__(self):
         super().__init__()
         self._configuration: configuration.Configuration
-        self._snowflake_client: snowflake_client.SnowflakeClient()
+        self._snowflake_client: snowflake_client.SnowflakeClient
 
     def _init_configuration(self):
         self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())

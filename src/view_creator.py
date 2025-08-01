@@ -246,7 +246,7 @@ class ViewCreator:
                 )
             else:
                 # Validate that the schema exists
-                self._snowflake_client.validate_schema_existance(
+                self._snowflake_client.validate_schema_existence(
                     destination_database,
                     self._convert_case(destination_schema, schema_name_case)
                 )

@@ -187,7 +187,7 @@ class SnowflakeClient:
 
         else:
             # If it does not exist, create it
-            logging.info(f"Schema {schema_name} does not exist in database {database}. Creating ...")
+            logging.info(f"Schema {schema_name} does not exist in database {database}. Creating...")
             copy_grants_query = ""
             if copy_grants:
                 copy_grants_query = " COPY GRANTS"

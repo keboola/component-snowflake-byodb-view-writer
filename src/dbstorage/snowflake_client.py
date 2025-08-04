@@ -135,14 +135,11 @@ class SnowflakeClient:
                 raise
 
     @_check_connection
-    def execute_query(self, query):
+    def execute_query(self, query: str, returning_result: bool = False) -> list[dict] | None:
         logging.debug(f"{query}")
+        if returning_result:
+            return self._cursor.fetchall()
         self._cursor.execute(query).fetchall()
-
-    @_check_connection
-    def execute_query_with_return(self, query):
-        logging.debug(f"{query}")
-        return self._cursor.execute(query).fetchall()
 
     @validate_sql_placeholders
     def create_or_replace_view(
@@ -188,16 +185,15 @@ class SnowflakeClient:
         self.execute_query(statement)
 
     @validate_sql_placeholders
-    def validate_schema_existence(self, database: str, schema: str):
+    def validate_schema_existence(self, database: str, schema: str) -> None:
         query = (
             f"SHOW SCHEMAS LIKE '{schema}' IN {database}"
         )
-        result = self.execute_query_with_return(query)
+        result = self.execute_query(query, returning_result=True)
         logging.debug(f"Validating schema existence with query: {query}")
 
         if any(row.get("name", "").lower() == schema.lower() for row in result):
             logging.info(f"Schema {schema} exists in database {database}. Continuing...")
-            return True
 
         raise UserException(f"Schema {schema} does not exist in database {database}.")
 

@@ -82,7 +82,6 @@ class Configuration(ConfigurationBase):
     debug: bool = False
     pswd_storage_token: str = ""
     db_name_prefix: str = "KEBOOLA_"
-    create_schemas: bool = True
 
     def validate_schema_mapping(self, bucket_ids: list[str]):
         """

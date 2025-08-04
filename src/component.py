@@ -114,7 +114,6 @@ class Component(ComponentBase):
                 skip_shared_tables=additional_options.ignore_shared_tables,
                 drop_stage_prefix=additional_options.drop_stage_prefix,
                 schema_mapping=schema_mapping,
-                create_schemas=self._configuration.create_schemas,
             )
 
     @sync_action("get_buckets")

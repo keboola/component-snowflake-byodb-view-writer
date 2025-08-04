@@ -7,7 +7,6 @@ from cryptography.hazmat.primitives import serialization
 import snowflake
 from snowflake.connector import SnowflakeConnection
 from snowflake.connector.cursor import SnowflakeCursor
-from keboola.component import UserException
 
 
 @dataclass
@@ -178,24 +177,22 @@ class SnowflakeClient:
     def create_if_not_exist_schema(
         self, database: str, schema_name: str, copy_grants: bool = False
     ):
-        copy_grants_query = ""
-        if copy_grants:
-            copy_grants_query = " COPY GRANTS"
-        statement = f'CREATE SCHEMA IF NOT EXISTS "{database}"."{schema_name}"{copy_grants_query};'
-        self.execute_query(statement)
-
-    @validate_sql_placeholders
-    def validate_schema_existence(self, database: str, schema: str) -> None:
+        # Validate if schema exists before creating it
         query = (
-            f"SHOW SCHEMAS LIKE '{schema}' IN {database}"
+            f"SHOW SCHEMAS LIKE '{schema_name}' IN {database}"
         )
         result = self.execute_query(query, returning_result=True)
-        logging.debug(f"Validating schema existence with query: {query}")
+        if any(row.get("name", "").lower() == schema_name.lower() for row in result):
+            logging.info(f"Schema {schema_name} already exists in database {database}. Continuing...")
 
-        if any(row.get("name", "").lower() == schema.lower() for row in result):
-            logging.info(f"Schema {schema} exists in database {database}. Continuing...")
         else:
-            raise UserException(f"Schema {schema} does not exist in database {database}.")
+            # If it does not exist, create it
+            logging.info(f"Schema {schema_name} does not exist in database {database}. Creating ...")
+            copy_grants_query = ""
+            if copy_grants:
+                copy_grants_query = " COPY GRANTS"
+            statement = f'CREATE SCHEMA "{database}"."{schema_name}"{copy_grants_query};'
+            self.execute_query(statement)
 
     @validate_sql_placeholders
     @_check_connection

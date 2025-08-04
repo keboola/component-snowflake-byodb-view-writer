@@ -238,18 +238,10 @@ class ViewCreator:
                 bucket_detail, use_bucket_alias, drop_stage_prefix, schema_mapping
             )
 
-            # Conditional schema creation
-            if create_schemas:
-                self._snowflake_client.create_if_not_exist_schema(
-                    destination_database,
-                    self._convert_case(destination_schema, schema_name_case),
-                )
-            else:
-                # Validate that the schema exists
-                self._snowflake_client.validate_schema_existence(
-                    destination_database,
-                    self._convert_case(destination_schema, schema_name_case)
-                )
+            self._snowflake_client.create_if_not_exist_schema(
+                destination_database,
+                self._convert_case(destination_schema, schema_name_case),
+            )
 
             for table in tables_resp:
                 # update tale def according to alias

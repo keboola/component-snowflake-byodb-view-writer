@@ -32,14 +32,6 @@
       },
       "propertyOrder": 161
     },
-    "create_schemas": {
-      "type": "boolean",
-      "title": "Create schemas",
-      "default": true,
-      "description": "Create schemas if they don't exist",
-      "format": "checkbox",
-      "propertyOrder": 162
-    },
     "custom_schema_mapping": {
       "type": "boolean",
       "title": "Custom schema mapping",

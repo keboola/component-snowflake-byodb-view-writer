@@ -194,8 +194,8 @@ class SnowflakeClient:
 
         if any(row.get("name", "").lower() == schema.lower() for row in result):
             logging.info(f"Schema {schema} exists in database {database}. Continuing...")
-
-        raise UserException(f"Schema {schema} does not exist in database {database}.")
+        else:
+            raise UserException(f"Schema {schema} does not exist in database {database}.")
 
     @validate_sql_placeholders
     @_check_connection

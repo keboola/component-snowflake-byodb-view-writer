@@ -138,7 +138,7 @@ class SnowflakeClient:
     def execute_query(self, query: str, returning_result: bool = False) -> list[dict] | None:
         logging.debug(f"{query}")
         if returning_result:
-            return self._cursor.fetchall()
+            return self._cursor.execute(query).fetchall()
         self._cursor.execute(query).fetchall()
 
     @validate_sql_placeholders

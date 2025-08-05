@@ -197,7 +197,9 @@ class SnowflakeClient:
     @validate_sql_placeholders
     @_check_connection
     def use_warehouse(self, warehouse: str):
-        self.execute_query(f"USE WAREHOUSE {warehouse};")
+        # So the GH copilot will shut the hell up about SQL injections
+        safe_warehouse = f'"{warehouse.replace("\"", "\"\"")}"'
+        self.execute_query(f"USE WAREHOUSE {safe_warehouse};")
 
     @validate_sql_placeholders
     @_check_connection

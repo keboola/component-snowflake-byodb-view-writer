@@ -178,10 +178,8 @@ class SnowflakeClient:
         self, database: str, schema_name: str, copy_grants: bool = False
     ):
         # Validate if schema exists before creating it
-        safe_schema = schema_name.replace("'", "''")
-        safe_db = database.replace('"', '""')
         query = (
-            f"SHOW SCHEMAS LIKE {safe_schema} IN {safe_db}"
+            f"SHOW SCHEMAS LIKE '{schema_name}' IN \"{database}\""
         )
         result = self.execute_query(query, returning_result=True)
         if any(row.get("name", "").lower() == schema_name.lower() for row in result):

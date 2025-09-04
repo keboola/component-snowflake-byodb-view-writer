@@ -43,6 +43,7 @@ class Component(ComponentBase):
         super().__init__()
         self._configuration: configuration.Configuration
         self._snowflake_client: snowflake_client.SnowflakeClient
+        self._sapi_client = Client(self._get_kbc_root_url(), self._get_storage_token())
 
     def _init_configuration(self):
         self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())
@@ -123,10 +124,32 @@ class Component(ComponentBase):
         Returns:
 
         """
-        sapi_client = Client(self._get_kbc_root_url(), self._get_storage_token())
-
-        buckets = sapi_client.buckets.list()
+        buckets = self._sapi_client.buckets.list()
         return [SelectElement(value=b["id"], label=f"({b['stage']}) {b['name']}") for b in buckets]
+
+    @sync_action("get_tables")
+    def get_available_tables(self) -> list[SelectElement]:
+        """
+        Sync action for getting list of available tables in selected buckets
+        Returns:
+
+        """
+        if self._configuration.bucket_ids:
+            buckets = self._configuration.bucket_ids
+        else:
+            buckets = [b["id"] for b in self._sapi_client.buckets.list()]
+
+        results = []
+        for bucket_id in buckets:
+            try:
+                tables = self._sapi_client.buckets.list_tables(bucket_id)
+                results.extend([
+                    SelectElement(value=f"{t['id']}", label=f"{bucket_id}.{t['id']}")
+                    for t in tables
+                ])
+            except Exception as e:
+                logging.warning(f"Cannot list tables in bucket {bucket_id}: {e}")
+        return results
 
     def _get_kbc_root_url(self):
         return f"https://{self.environment_variables.stack_id}"

@@ -73,6 +73,7 @@ class Configuration(ConfigurationBase):
     role: str = ""
     destination_db: str = ""
     bucket_ids: list[str] = dataclasses.field(default_factory=list)
+    table_ids: list[str] = dataclasses.field(default_factory=list)
     pswd_password: str = ""
     pswd_private_key: str = ""
     pswd_private_key_pass: str = ""

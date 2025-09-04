@@ -32,6 +32,26 @@
       },
       "propertyOrder": 161
     },
+    "table_ids": {
+      "type": "array",
+      "title": "Storage Tables",
+      "description": "Storage Tables. If left empty, all tables in the selected buckets will be used. If no buckets are selected, all tables in all buckets will be used.",
+      "items": {
+        "enum": [],
+        "type": "string",
+        "minLength": 5,
+        "title": "Table ID"
+      },
+      "format": "select",
+      "uniqueItems": true,
+      "options": {
+        "async": {
+          "label": "Re-load tables",
+          "action": "get_tables"
+        }
+      },
+      "propertyOrder": 162
+    },
     "custom_schema_mapping": {
       "type": "boolean",
       "title": "Custom schema mapping",

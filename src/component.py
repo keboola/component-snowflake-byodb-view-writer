@@ -134,6 +134,7 @@ class Component(ComponentBase):
         Returns:
 
         """
+        self._init_configuration()
         if self._configuration.bucket_ids:
             buckets = self._configuration.bucket_ids
         else:

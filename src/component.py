@@ -149,7 +149,10 @@ class Component(ComponentBase):
                     for t in tables
                 ])
             except Exception as e:
-                logging.warning(f"Cannot list tables in bucket {bucket_id}: {e}")
+                ValidationResult(
+                    f"Cannot list tables in bucket {bucket_id}: {e}",
+                    MessageType.WARNING
+                )
         return results
 
     def _get_kbc_root_url(self):

@@ -145,7 +145,7 @@ class Component(ComponentBase):
             try:
                 tables = self._sapi_client.buckets.list_tables(bucket_id)
                 results.extend([
-                    SelectElement(value=f"{t['id']}", label=f"{bucket_id}.{t['id']}")
+                    SelectElement(value=f"{t['id']}", label=f"[{bucket_id}] {t['id']}")
                     for t in tables
                 ])
             except Exception as e:

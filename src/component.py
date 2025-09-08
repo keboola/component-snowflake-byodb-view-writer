@@ -101,6 +101,8 @@ class Component(ComponentBase):
             schema_mapping,
         )
 
+        t_ids = self._configuration.table_ids or None
+
         for bucket_id in bucket_ids:
             logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
             view_creator.create_views_from_bucket(
@@ -115,6 +117,7 @@ class Component(ComponentBase):
                 skip_shared_tables=additional_options.ignore_shared_tables,
                 drop_stage_prefix=additional_options.drop_stage_prefix,
                 schema_mapping=schema_mapping,
+                table_ids=t_ids,
             )
 
     @sync_action("get_buckets")
@@ -145,7 +148,7 @@ class Component(ComponentBase):
             try:
                 tables = self._sapi_client.buckets.list_tables(bucket_id)
                 results.extend([
-                    SelectElement(value=f"{t['id']}", label=f"[{bucket_id}] {t['id']}")
+                    SelectElement(value=t['id'], label=t['id'])
                     for t in tables
                 ])
             except Exception as e:

@@ -190,6 +190,7 @@ class ViewCreator:
         skip_shared_tables: bool = True,
         schema_mapping: list[SchemaMapping] = None,
         create_schemas: bool = True,
+        table_ids: list[str] = None,
     ) -> None:
         """
         Creates views with datatypes for all tables in the bucket.
@@ -213,11 +214,15 @@ class ViewCreator:
             schema_mapping: list[SchemaMapping]: List of bucket/schema mappings.
                                                  If specified, other schema related parameters are ignored.
             create_schemas: bool: Whether to create schemas if they don't exist
+            table_ids: list[str]: List of table ids to process. If specified, only tables in the list will be processed.
 
         Returns:
 
         """
         tables_resp = self._sapi_client.buckets.list_tables(bucket_id, include=["columns", "columnMetadata"])
+
+        if table_ids:
+            tables_resp = [t for t in tables_resp if t["id"] in table_ids]
 
         session_parameters = None
         if session_id:

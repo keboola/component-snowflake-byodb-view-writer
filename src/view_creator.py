@@ -169,7 +169,7 @@ class ViewCreator:
             if s in seen:
                 duplicates.append(s)
             seen.add(s)
-        if duplicates:
+        if duplicates and not schema_mapping:
             raise UserException(
                 f"Current setting would lead to a duplicate schema names. "
                 f'Try to turn off the "drop stage prefix" or "Use bucket alias" options. '

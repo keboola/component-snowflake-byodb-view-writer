@@ -134,11 +134,17 @@ class SnowflakeClient:
                 raise
 
     @_check_connection
-    def execute_query(self, query: str, returning_result: bool = False) -> list[dict] | None:
+    def execute_query(self, query: str, params: dict = None, returning_result: bool = False) -> list[dict] | None:
         logging.debug(f"{query}")
         if returning_result:
+            if params:
+                return self._cursor.execute(query, params).fetchall()
             return self._cursor.execute(query).fetchall()
-        self._cursor.execute(query).fetchall()
+
+        if params:
+            self._cursor.execute(query, params).fetchall()
+        else:
+            self._cursor.execute(query).fetchall()
 
     @validate_sql_placeholders
     def create_or_replace_view(
@@ -197,10 +203,7 @@ class SnowflakeClient:
     @validate_sql_placeholders
     @_check_connection
     def use_warehouse(self, warehouse: str):
-        # So the GH copilot will shut the hell up about SQL injections
-        escaped_warehouse = warehouse.replace('"', '""')
-        safe_warehouse = f'"{escaped_warehouse}"'
-        self.execute_query(f"USE WAREHOUSE {safe_warehouse};")
+        self.execute_query(query="USE WAREHOUSE %(warehouse)s", params={"warehouse": warehouse})
 
     @validate_sql_placeholders
     @_check_connection

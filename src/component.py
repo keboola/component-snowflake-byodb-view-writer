@@ -42,20 +42,17 @@ class Component(ComponentBase):
     def __init__(self):
         super().__init__()
         self._configuration: configuration.Configuration
-        self._snowflake_client: snowflake_client.SnowflakeClient()
+        self._snowflake_client: snowflake_client.SnowflakeClient
+        self._sapi_client = Client(self._get_kbc_root_url(), self._get_storage_token())
 
     def _init_configuration(self):
-        self.validate_configuration_parameters(
-            configuration.Configuration.get_dataclass_required_parameters()
-        )
-        self._configuration: configuration.Configuration = (
-            configuration.Configuration.load_from_dict(self.configuration.parameters)
+        self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())
+        self._configuration: configuration.Configuration = configuration.Configuration.load_from_dict(
+            self.configuration.parameters
         )
 
         if self._configuration.pswd_password and self._configuration.pswd_private_key:
-            raise UserException(
-                "Only one of password or private key should be provided."
-            )
+            raise UserException("Only one of password or private key should be provided.")
 
     def run(self):
         """
@@ -85,9 +82,7 @@ class Component(ComponentBase):
             system_name_prefix=self._configuration.db_name_prefix,
         )
 
-        additional_options = (
-            self._configuration.additional_options or configuration.AdditionalOptions()
-        )
+        additional_options = self._configuration.additional_options or configuration.AdditionalOptions()
 
         bucket_ids = self._configuration.bucket_ids
         if not bucket_ids:
@@ -106,10 +101,10 @@ class Component(ComponentBase):
             schema_mapping,
         )
 
+        t_ids = self._configuration.table_ids or None
+
         for bucket_id in bucket_ids:
-            logging.info(
-                f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}"
-            )
+            logging.info(f"Creating views for {bucket_id} in destination database {self._configuration.destination_db}")
             view_creator.create_views_from_bucket(
                 bucket_id,
                 self._configuration.destination_db,
@@ -122,6 +117,7 @@ class Component(ComponentBase):
                 skip_shared_tables=additional_options.ignore_shared_tables,
                 drop_stage_prefix=additional_options.drop_stage_prefix,
                 schema_mapping=schema_mapping,
+                table_ids=t_ids,
             )
 
     @sync_action("get_buckets")
@@ -131,22 +127,42 @@ class Component(ComponentBase):
         Returns:
 
         """
-        sapi_client = Client(self._get_kbc_root_url(), self._get_storage_token())
+        buckets = self._sapi_client.buckets.list()
+        return [SelectElement(value=b["id"], label=f"({b['stage']}) {b['name']}") for b in buckets]
 
-        buckets = sapi_client.buckets.list()
-        return [
-            SelectElement(value=b["id"], label=f"({b['stage']}) {b['name']}")
-            for b in buckets
-        ]
+    @sync_action("get_tables")
+    def get_available_tables(self) -> list[SelectElement]:
+        """
+        Sync action for getting list of available tables in selected buckets
+        Returns:
+
+        """
+        self._init_configuration()
+        if self._configuration.bucket_ids:
+            buckets = self._configuration.bucket_ids
+        else:
+            buckets = [b["id"] for b in self._sapi_client.buckets.list()]
+
+        results = []
+        for bucket_id in buckets:
+            try:
+                tables = self._sapi_client.buckets.list_tables(bucket_id)
+                results.extend([
+                    SelectElement(value=t['id'], label=f"({bucket_id}) {t['name']}")
+                    for t in tables
+                ])
+            except Exception as e:
+                ValidationResult(
+                    f"Cannot list tables in bucket {bucket_id}: {e}",
+                    MessageType.WARNING
+                )
+        return results
 
     def _get_kbc_root_url(self):
         return f"https://{self.environment_variables.stack_id}"
 
     def _get_storage_token(self) -> str:
-        return (
-            self.configuration.parameters.get("#storage_token")
-            or self.environment_variables.token
-        )
+        return self.configuration.parameters.get("#storage_token") or self.environment_variables.token
 
     @sync_action("testConnection")
     def test_connection(self):
@@ -164,13 +180,9 @@ class Component(ComponentBase):
                 auth_type=self._configuration.auth_type,
             )
             try:
-                with self._snowflake_client.connect(
-                    credentials_obj=credentials
-                ) as client:
+                with self._snowflake_client.connect(credentials_obj=credentials) as client:
                     try:
-                        result = client.execute_query(
-                            "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
-                        )
+                        result = client.execute_query("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();")
                         return ValidationResult(
                             f"Connection successful. Test query result: {result}",
                             MessageType.SUCCESS,
@@ -182,9 +194,7 @@ class Component(ComponentBase):
                         )
 
             except Exception as conn_error:
-                return ValidationResult(
-                    f"Error during connection: {conn_error}", MessageType.WARNING
-                )
+                return ValidationResult(f"Error during connection: {conn_error}", MessageType.WARNING)
 
         except snowflake_errors.Error as e:
             return ValidationResult(f"Connection failed: {e}", MessageType.WARNING)

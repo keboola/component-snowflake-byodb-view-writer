@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List
 
 from kbcstorage.client import Client
 from keboola.component import UserException
@@ -13,20 +12,20 @@ class StorageDataType:
     type: str
     length: str = None
     nullable: bool = None
-    type_provider: str = ''
-    length_provider: str = ''
-    nullable_provider: str = ''
+    type_provider: str = ""
+    length_provider: str = ""
+    nullable_provider: str = ""
 
 
 class ViewCreator:
-
-    def __init__(self,
-                 snowflake_credentials: Credentials,
-                 kbc_root_url: str,
-                 storage_token: str,
-                 project_id: str,
-                 system_name_prefix: str = 'KEBOOLA_'):
-
+    def __init__(
+        self,
+        snowflake_credentials: Credentials,
+        kbc_root_url: str,
+        storage_token: str,
+        project_id: str,
+        system_name_prefix: str = "KEBOOLA_",
+    ):
         self._snowflake_client = SnowflakeClient()
         self.__snowflake_credentials = snowflake_credentials
         self._sapi_client = Client(kbc_root_url, storage_token)
@@ -34,13 +33,13 @@ class ViewCreator:
         self._system_name_prefix = system_name_prefix
         self._current_project_id = project_id
 
-    def _group_by_timestamp(self, data: dict):
+    def _group_by_timestamp(self, data: dict) -> dict:
         result = {}
         # Iterate since end (ordered by latest)
         for d in data[::-1]:
-            if not result.get(d['timestamp']):
-                result[d['timestamp']] = []
-            result[d['timestamp']].append(d)
+            if not result.get(d["timestamp"]):
+                result[d["timestamp"]] = []
+            result[d["timestamp"]].append(d)
 
         return result
 
@@ -58,18 +57,18 @@ class ViewCreator:
         metadata = metadata or {}
 
         column_metadata = metadata.get(column_name, [])
-        datatype = StorageDataType('')
+        datatype = StorageDataType("")
 
         for md_item in column_metadata[::-1]:
-            if not datatype.type and md_item['key'] in ['KBC.datatype.basetype']:
-                datatype.type = md_item['value']
-                datatype.type_provider = md_item['provider']
-            if not datatype.length and md_item['key'] == 'KBC.datatype.length':
-                datatype.length = md_item['value']
-                datatype.length_provider = md_item['provider']
-            if md_item['key'] == 'KBC.datatype.nullable':
-                datatype.nullable = bool(md_item['value'])
-                datatype.nullable_provider = md_item['provider']
+            if not datatype.type and md_item["key"] in ["KBC.datatype.basetype"]:
+                datatype.type = md_item["value"]
+                datatype.type_provider = md_item["provider"]
+            if not datatype.length and md_item["key"] == "KBC.datatype.length":
+                datatype.length = md_item["value"]
+                datatype.length_provider = md_item["provider"]
+            if md_item["key"] == "KBC.datatype.nullable":
+                datatype.nullable = bool(md_item["value"])
+                datatype.nullable_provider = md_item["provider"]
             # stop if all found
             if datatype.type and datatype.length is not None and datatype.nullable is not None:
                 break
@@ -77,12 +76,12 @@ class ViewCreator:
                 continue
 
         if not datatype.type:
-            datatype = StorageDataType('TEXT')
+            datatype = StorageDataType("TEXT")
         return datatype
 
-    def _get_table_columns(self, table_response: dict) -> Dict[str, StorageDataType]:
-        columns = table_response['columns']
-        metadata = table_response['columnMetadata']
+    def _get_table_columns(self, table_response: dict) -> dict[str, StorageDataType]:
+        columns = table_response["columns"]
+        metadata = table_response["columnMetadata"]
 
         column_datatypes = dict()
 
@@ -91,27 +90,31 @@ class ViewCreator:
 
         return column_datatypes
 
-    def _build_column_definitions(self, table_columns: Dict[str, StorageDataType], column_name_case: str = 'original',
-                                  is_native_typed: bool = False) -> str:
+    def _build_column_definitions(
+        self,
+        table_columns: dict[str, StorageDataType],
+        column_name_case: str = "original",
+        is_native_typed: bool = False,
+    ) -> str:
         column_definitions = []
         for name, dtype in table_columns.items():
             # Anything that is not STRING needs to be wrapped in  NULLIF
-            if not is_native_typed and (dtype.type.upper() != 'STRING' or dtype.nullable):
-                identifier_name = f'NULLIF("{name}", \'\')'
+            if not is_native_typed and (dtype.type.upper() != "STRING" or dtype.nullable):
+                identifier_name = f"NULLIF(\"{name}\", '')"
             else:
                 identifier_name = f'"{name}"'
 
-            column_def = f'{identifier_name}::{dtype.type}'
+            column_def = f"{identifier_name}::{dtype.type}"
             # Only NUMERIC types can have length
-            if dtype.length and dtype.type.upper() in ['NUMERIC', 'STRING']:
-                column_def += f'({dtype.length})'
+            if dtype.length and dtype.type.upper() in ["NUMERIC", "STRING"]:
+                column_def += f"({dtype.length})"
             column_def += f' AS "{self._convert_case(name, column_name_case)}"'
             column_definitions.append(column_def)
 
-        return ','.join(column_definitions)
+        return ",".join(column_definitions)
 
     @staticmethod
-    def _convert_case(identifier: str, case_conversion: str = 'original'):
+    def _convert_case(identifier: str, case_conversion: str = "original") -> str:
         """
         Modifies the case of the name identifier.
         'original' to keep the case unchanged, 'upper'/'lower' to force the case of the identifier
@@ -122,22 +125,28 @@ class ViewCreator:
         Returns:
 
         """
-        if case_conversion == 'original':
+        if case_conversion == "original":
             pass
-        elif case_conversion == 'upper':
+        elif case_conversion == "upper":
             identifier = identifier.upper()
-        elif case_conversion == 'lower':
+        elif case_conversion == "lower":
             identifier = identifier.lower()
         else:
             raise ValueError(
-                f"Invalid case option '{case_conversion}', supported values are ['original','upper','lower']")
+                f"Invalid case option '{case_conversion}', supported values are ['original','upper','lower']"
+            )
         return identifier
 
-    def get_all_bucket_ids(self):
-        return [b['id'] for b in self._sapi_client.buckets.list()]
+    def get_all_bucket_ids(self) -> list[str]:
+        return [b["id"] for b in self._sapi_client.buckets.list()]
 
-    def validate_schema_names(self, bucket_ids: List[str], use_bucket_alias: bool, drop_stage_prefix: bool,
-                              schema_mapping: List[SchemaMapping] = None):
+    def validate_schema_names(
+        self,
+        bucket_ids: list[str],
+        use_bucket_alias: bool,
+        drop_stage_prefix: bool,
+        schema_mapping: list[SchemaMapping] = None,
+    ) -> None:
         """
         Validates schema names to prevent duplicates in the destination.
         Args:
@@ -150,30 +159,39 @@ class ViewCreator:
 
         """
         bucket_details = [self._sapi_client.buckets.detail(bucket_id) for bucket_id in bucket_ids]
-        schema_names = [self._get_destination_schema_name(bd, use_bucket_alias, drop_stage_prefix, schema_mapping) for
-                        bd in
-                        bucket_details]
+        schema_names = [
+            self._get_destination_schema_name(bd, use_bucket_alias, drop_stage_prefix, schema_mapping)
+            for bd in bucket_details
+        ]
         seen = set()
         duplicates = []
         for s in schema_names:
             if s in seen:
                 duplicates.append(s)
             seen.add(s)
-        if duplicates:
-            raise UserException(f'Current setting would lead to a duplicate schema names. '
-                                f'Try to turn off the "drop stage prefix" or "Use bucket alias" options. '
-                                f'Duplicate schemas:{duplicates} ')
+        if duplicates and not schema_mapping:
+            raise UserException(
+                f"Current setting would lead to a duplicate schema names. "
+                f'Try to turn off the "drop stage prefix" or "Use bucket alias" options. '
+                f"Duplicate schemas:{duplicates} "
+            )
 
-    def create_views_from_bucket(self, bucket_id: str, destination_database: str,
-                                 schema_name_case: str = 'original',
-                                 view_name_case: str = 'original',
-                                 column_name_case: str = 'original',
-                                 use_bucket_alias: bool = True,
-                                 drop_stage_prefix: bool = False,
-                                 use_table_alias: bool = False,
-                                 session_id: str = '',
-                                 skip_shared_tables: bool = True,
-                                 schema_mapping: List[SchemaMapping] = None):
+    def create_views_from_bucket(
+        self,
+        bucket_id: str,
+        destination_database: str,
+        schema_name_case: str = "original",
+        view_name_case: str = "original",
+        column_name_case: str = "original",
+        use_bucket_alias: bool = True,
+        drop_stage_prefix: bool = False,
+        use_table_alias: bool = False,
+        session_id: str = "",
+        skip_shared_tables: bool = True,
+        schema_mapping: list[SchemaMapping] = None,
+        create_schemas: bool = True,
+        table_ids: list[str] = None,
+    ) -> None:
         """
         Creates views with datatypes for all tables in the bucket.
         Args:
@@ -193,48 +211,66 @@ class ViewCreator:
             use_table_alias: bool: Use user defined table alias instead of the table ID for view name
             skip_shared_tables: skip shared tables from processing
             drop_stage_prefix: drop bucket stage prefix from schema name
-            schema_mapping: List[SchemaMapping]: List of bucket/schema mappings.
+            schema_mapping: list[SchemaMapping]: List of bucket/schema mappings.
                                                  If specified, other schema related parameters are ignored.
+            create_schemas: bool: Whether to create schemas if they don't exist
+            table_ids: list[str]: List of table ids to process. If specified, only tables in the list will be processed.
 
         Returns:
 
         """
-        tables_resp = self._sapi_client.buckets.list_tables(bucket_id, include=['columns', 'columnMetadata'])
+        tables_resp = self._sapi_client.buckets.list_tables(bucket_id, include=["columns", "columnMetadata"])
+
+        if table_ids:
+            tables_resp = [t for t in tables_resp if t["id"] in table_ids]
 
         session_parameters = None
         if session_id:
-            session_parameters = {
-                'QUERY_TAG': f'{{"runId":"{session_id}"}}'
-            }
+            session_parameters = {"QUERY_TAG": f'{{"runId":"{session_id}"}}'}
         with self._snowflake_client.connect(self.__snowflake_credentials, session_parameters=session_parameters):
             if self.__snowflake_credentials.role:
                 self._snowflake_client.use_role(self.__snowflake_credentials.role)
             bucket_detail = self._sapi_client.buckets.detail(bucket_id)
 
+            if self.__snowflake_credentials.warehouse:
+                self._snowflake_client.use_warehouse(self.__snowflake_credentials.warehouse)
+
             # skip shared buckets if requested
-            if bucket_detail.get('sourceBucket') and skip_shared_tables:
+            if bucket_detail.get("sourceBucket") and skip_shared_tables:
                 return
 
-            destination_schema = self._get_destination_schema_name(bucket_detail, use_bucket_alias, drop_stage_prefix,
-                                                                   schema_mapping)
+            destination_schema = self._get_destination_schema_name(
+                bucket_detail, use_bucket_alias, drop_stage_prefix, schema_mapping
+            )
 
-            self._snowflake_client.create_if_not_exist_schema(destination_database,
-                                                              self._convert_case(destination_schema, schema_name_case))
+            self._snowflake_client.create_if_not_exist_schema(
+                destination_database,
+                self._convert_case(destination_schema, schema_name_case),
+            )
+
             for table in tables_resp:
                 # update tale def according to alias
                 source_table = self._handle_alias(table)
                 # skip shared tables if requested
-                if source_table.get('is_shared') and skip_shared_tables:
+                if source_table.get("is_shared") and skip_shared_tables:
                     continue
 
                 table_columns = self._get_table_columns(table)
 
-                self._create_view_in_external_db(bucket_detail, destination_schema, table, source_table, table_columns,
-                                                 destination_database,
-                                                 schema_name_case, view_name_case, column_name_case,
-                                                 use_table_alias)
+                self._create_view_in_external_db(
+                    bucket_detail,
+                    destination_schema,
+                    table,
+                    source_table,
+                    table_columns,
+                    destination_database,
+                    schema_name_case,
+                    view_name_case,
+                    column_name_case,
+                    use_table_alias,
+                )
 
-    def _handle_alias(self, table: dict):
+    def _handle_alias(self, table: dict) -> dict:
         """
         Retrieves source table of alias if present and changes the ROLE to appropriate source project
         Args:
@@ -244,53 +280,63 @@ class ViewCreator:
 
         """
         source_table = {}
-        if table['isAlias']:
-            source_table = table['sourceTable']
-            source_table['bucket_id'] = '.'.join(source_table['id'].split('.')[0:2])
-            source_table['table_name'] = '.'.join(source_table['id'].split('.')[-1:])
+        if table["isAlias"]:
+            source_table = table["sourceTable"]
+            source_table["bucket_id"] = ".".join(source_table["id"].split(".")[0:2])
+            source_table["table_name"] = ".".join(source_table["id"].split(".")[-1:])
             # FIX we want to use source table metadata, there are none on alias
-            table['columnMetadata'] = source_table['columnMetadata']
+            table["columnMetadata"] = source_table["columnMetadata"]
 
-        if table['isAlias'] and source_table['project']['id'] != int(self._project_id):
+        if table["isAlias"] and source_table["project"]["id"] != int(self._project_id):
             # it is shared bucket, change role to source project
-            source_table['is_shared'] = True
+            source_table["is_shared"] = True
 
         return source_table
 
-    def _get_destination_schema_name(self, bucket_detail: dict, use_alias=True, drop_stage_prefix: bool = False,
-                                     schema_mapping: List[SchemaMapping] = None):
+    def _get_destination_schema_name(
+        self,
+        bucket_detail: dict,
+        use_alias=True,
+        drop_stage_prefix: bool = False,
+        schema_mapping: list[SchemaMapping] = None,
+    ) -> str:
         """
         Generates destination schema name based on parameters
         Args:
             bucket_detail:
             use_alias:
             drop_stage_prefix:
-            schema_mapping: List[SchemaMapping]: If specified, other parameters are ignored.
+            schema_mapping: list[SchemaMapping]: If specified, other parameters are ignored.
 
         Returns:
 
         """
         # build name from mapping if specified
-        if schema_mapping and any([mapping := m for m in schema_mapping if m.bucket_id == bucket_detail['id']]):
+        if schema_mapping and any([mapping := m for m in schema_mapping if m.bucket_id == bucket_detail["id"]]):
             schema_name = mapping.destination_schema
         else:
             if use_alias:
-                schema_name = f'{bucket_detail["stage"]}_{bucket_detail["displayName"]}'
+                schema_name = f"{bucket_detail['stage']}_{bucket_detail['displayName']}"
             else:
-                schema_name = bucket_detail['id'].replace('.', '_')
+                schema_name = bucket_detail["id"].replace(".", "_")
             if drop_stage_prefix:
-                schema_name = schema_name[len(bucket_detail['stage']) + 1:]
+                schema_name = schema_name[len(bucket_detail["stage"]) + 1:]
 
         return schema_name
 
-    def _create_view_in_external_db(self, bucket_detail: dict, destination_schema_name: str, table: dict,
-                                    source_table: dict,
-                                    table_columns: Dict[str, StorageDataType],
-                                    destination_database: str,
-                                    schema_name_case: str = 'original',
-                                    view_name_case: str = 'original',
-                                    column_name_case: str = 'original',
-                                    use_table_alias: bool = False):
+    def _create_view_in_external_db(
+        self,
+        bucket_detail: dict,
+        destination_schema_name: str,
+        table: dict,
+        source_table: dict,
+        table_columns: dict[str, StorageDataType],
+        destination_database: str,
+        schema_name_case: str = "original",
+        view_name_case: str = "original",
+        column_name_case: str = "original",
+        use_table_alias: bool = False,
+    ) -> None:
         """
 
         Args:
@@ -308,27 +354,31 @@ class ViewCreator:
         Returns:
 
         """
-        column_definitions = self._build_column_definitions(table_columns, column_name_case,
-                                                            table.get('isTyped', False))
-        bucket_id = bucket_detail['id']
+        column_definitions = self._build_column_definitions(
+            table_columns, column_name_case, table.get("isTyped", False)
+        )
+        bucket_id = bucket_detail["id"]
         # use display or default name
-        destination_table_name = table['displayName'] if use_table_alias else table['name']
-        destination_table = f'"{destination_database}"' \
-                            f'."{self._convert_case(destination_schema_name, schema_name_case)}"' \
-                            f'."{self._convert_case(destination_table_name, view_name_case)}"'
+        destination_table_name = table["displayName"] if use_table_alias else table["name"]
+        destination_table = (
+            f'"{destination_database}"'
+            f'."{self._convert_case(destination_schema_name, schema_name_case)}"'
+            f'."{self._convert_case(destination_table_name, view_name_case)}"'
+        )
 
         source_table_id = f'"{bucket_id}"."{table["name"]}"'
         source_project_id = self._project_id
         if source_table:
-            source_table["id"].split('.')
+            source_table["id"].split(".")
             source_table_id = f'"{source_table["bucket_id"]}"."{source_table["table_name"]}"'
-            source_project_id = source_table['project']['id']
+            source_project_id = source_table["project"]["id"]
 
         source_table_identifier = f'"{self.get_project_db_name(source_project_id)}".{source_table_id}'
         columns_definition = f'{column_definitions}, "_timestamp"::TIMESTAMP AS "_timestamp"'
 
-        self._snowflake_client.create_or_replace_view(destination_table, columns_definition, source_table_identifier,
-                                                      True)
+        self._snowflake_client.create_or_replace_view(
+            destination_table, columns_definition, source_table_identifier, True
+        )
 
-    def get_project_db_name(self, project_id):
-        return f'{self._system_name_prefix}{project_id}'
+    def get_project_db_name(self, project_id) -> str:
+        return f"{self._system_name_prefix}{project_id}"

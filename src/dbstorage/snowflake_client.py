@@ -134,9 +134,17 @@ class SnowflakeClient:
                 raise
 
     @_check_connection
-    def execute_query(self, query):
+    def execute_query(self, query: str, params: dict = None, returning_result: bool = False) -> list[dict] | None:
         logging.debug(f"{query}")
-        self._cursor.execute(query).fetchall()
+        if returning_result:
+            if params:
+                return self._cursor.execute(query, params).fetchall()
+            return self._cursor.execute(query).fetchall()
+
+        if params:
+            self._cursor.execute(query, params).fetchall()
+        else:
+            self._cursor.execute(query).fetchall()
 
     @validate_sql_placeholders
     def create_or_replace_view(
@@ -175,11 +183,27 @@ class SnowflakeClient:
     def create_if_not_exist_schema(
         self, database: str, schema_name: str, copy_grants: bool = False
     ):
-        copy_grants_query = ""
-        if copy_grants:
-            copy_grants_query = " COPY GRANTS"
-        statement = f'CREATE SCHEMA IF NOT EXISTS "{database}"."{schema_name}"{copy_grants_query};'
-        self.execute_query(statement)
+        # Validate if schema exists before creating it
+        query = (
+            f"SHOW SCHEMAS LIKE '{schema_name}' IN \"{database}\""
+        )
+        result = self.execute_query(query, returning_result=True)
+        if any(row.get("name", "").lower() == schema_name.lower() for row in result):
+            logging.info(f"Schema {schema_name} already exists in database {database}. Continuing...")
+
+        else:
+            # If it does not exist, create it
+            logging.info(f"Schema {schema_name} does not exist in database {database}. Creating...")
+            copy_grants_query = ""
+            if copy_grants:
+                copy_grants_query = " COPY GRANTS"
+            statement = f'CREATE SCHEMA "{database}"."{schema_name}"{copy_grants_query};'
+            self.execute_query(statement)
+
+    @validate_sql_placeholders
+    @_check_connection
+    def use_warehouse(self, warehouse: str):
+        self.execute_query(query="USE WAREHOUSE %(warehouse)s", params={"warehouse": warehouse})
 
     @validate_sql_placeholders
     @_check_connection

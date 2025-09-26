@@ -42,8 +42,7 @@ class ConfigurationBase:
         return [
             cls._convert_private_value_inv(f.name)
             for f in dataclasses.fields(cls)
-            if f.default == dataclasses.MISSING
-            and f.default_factory == dataclasses.MISSING
+            if f.default == dataclasses.MISSING and f.default_factory == dataclasses.MISSING
         ]
 
 
@@ -74,6 +73,7 @@ class Configuration(ConfigurationBase):
     role: str = ""
     destination_db: str = ""
     bucket_ids: list[str] = dataclasses.field(default_factory=list)
+    table_ids: list[str] = dataclasses.field(default_factory=list)
     pswd_password: str = ""
     pswd_private_key: str = ""
     pswd_private_key_pass: str = ""
@@ -93,9 +93,7 @@ class Configuration(ConfigurationBase):
         Returns:
 
         """
-        invalid_mapping = [
-            m.bucket_id for m in self.schema_mapping if m.bucket_id not in bucket_ids
-        ]
+        invalid_mapping = [m.bucket_id for m in self.schema_mapping if m.bucket_id not in bucket_ids]
         if self.schema_mapping and invalid_mapping:
             raise UserException(
                 f"Some bucket names are invalid in the schema mapping: {invalid_mapping}. "

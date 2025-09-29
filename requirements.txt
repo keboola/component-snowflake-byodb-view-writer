@@ -1,7 +1,0 @@
-keboola.component==1.4.2
-keboola.utils
-snowflake-connector-python==3.6.0
-git+https://github.com/keboola/sapi-python-client.git
-mock
-freezegun
-dataconf

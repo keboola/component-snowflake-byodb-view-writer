@@ -134,9 +134,14 @@ class SnowflakeClient:
                 raise
 
     @_check_connection
-    def execute_query(self, query: str, params: dict = None, returning_result: bool = False) -> list[dict] | None:
-        logging.debug(f"{query}")
-        if returning_result:
+    def execute_query(
+        self,
+        query: str,
+        params: dict | tuple | None = None,
+        return_result: bool = False,
+    ) -> list[dict] | None:
+        logging.info("Query: %s, params: %s", query, params)
+        if return_result:
             if params:
                 return self._cursor.execute(query, params).fetchall()
             return self._cursor.execute(query).fetchall()
@@ -187,7 +192,7 @@ class SnowflakeClient:
         query = (
             f"SHOW SCHEMAS LIKE '{schema_name}' IN \"{database}\""
         )
-        result = self.execute_query(query, returning_result=True)
+        result = self.execute_query(query, return_result=True)
         if any(row.get("name", "").lower() == schema_name.lower() for row in result):
             logging.info(f"Schema {schema_name} already exists in database {database}. Continuing...")
 
@@ -203,12 +208,12 @@ class SnowflakeClient:
     @validate_sql_placeholders
     @_check_connection
     def use_warehouse(self, warehouse: str):
-        self.execute_query(query="USE WAREHOUSE %(warehouse)s", params={"warehouse": warehouse})
+        self.execute_query("USE WAREHOUSE IDENTIFIER(%s)", (warehouse,))
 
     @validate_sql_placeholders
     @_check_connection
     def use_role(self, role: str):
-        self.execute_query(f"USE ROLE {role};")
+        self.execute_query("USE ROLE IDENTIFIER(%s)", (role,))
 
     @property
     def _cursor(self) -> SnowflakeCursor:

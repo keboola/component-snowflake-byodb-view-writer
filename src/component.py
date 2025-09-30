@@ -1,31 +1,15 @@
-"""
-Template Component main class.
-
-"""
-
 import logging
 
 import snowflake.connector.errors as snowflake_errors
 from kbcstorage.client import Client
 from keboola.component.base import ComponentBase, sync_action
-from keboola.component.sync_actions import ValidationResult, MessageType
 from keboola.component.exceptions import UserException
-
-# configuration variables
-from keboola.component.sync_actions import SelectElement
+from keboola.component.sync_actions import MessageType, SelectElement, ValidationResult
 
 import configuration
 from dbstorage import snowflake_client
 from dbstorage.snowflake_client import Credentials
 from view_creator import ViewCreator
-
-KEY_API_TOKEN = "#api_token"
-KEY_PRINT_HELLO = "print_hello"
-
-# list of mandatory parameters => if some is missing,
-# component will fail with readable message on initialization.
-REQUIRED_PARAMETERS = [KEY_PRINT_HELLO]
-REQUIRED_IMAGE_PARS = []
 
 
 class Component(ComponentBase):
@@ -47,9 +31,7 @@ class Component(ComponentBase):
 
     def _init_configuration(self):
         self.validate_configuration_parameters(configuration.Configuration.get_dataclass_required_parameters())
-        self._configuration: configuration.Configuration = configuration.Configuration.load_from_dict(
-            self.configuration.parameters
-        )
+        self._configuration = configuration.Configuration.load_from_dict(self.configuration.parameters)
 
         if self._configuration.pswd_password and self._configuration.pswd_private_key:
             raise UserException("Only one of password or private key should be provided.")
@@ -147,15 +129,9 @@ class Component(ComponentBase):
         for bucket_id in buckets:
             try:
                 tables = self._sapi_client.buckets.list_tables(bucket_id)
-                results.extend([
-                    SelectElement(value=t['id'], label=f"({bucket_id}) {t['name']}")
-                    for t in tables
-                ])
+                results.extend([SelectElement(value=t["id"], label=f"({bucket_id}) {t['name']}") for t in tables])
             except Exception as e:
-                ValidationResult(
-                    f"Cannot list tables in bucket {bucket_id}: {e}",
-                    MessageType.WARNING
-                )
+                ValidationResult(f"Cannot list tables in bucket {bucket_id}: {e}", MessageType.WARNING)
         return results
 
     def _get_kbc_root_url(self):

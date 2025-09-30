@@ -1,12 +1,12 @@
 import functools
 import logging
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
-from cryptography.hazmat.primitives import serialization
+from dataclasses import asdict, dataclass
 
 import snowflake
+from cryptography.hazmat.primitives import serialization
 from snowflake.connector import SnowflakeConnection
-from snowflake.connector.cursor import SnowflakeCursor
+from snowflake.connector.cursor import DictCursor, SnowflakeCursor
 
 
 @dataclass
@@ -61,7 +61,7 @@ class SnowflakeClient:
             cfg = asdict(credentials_obj)
             cfg["session_parameters"] = session_parameters
             self.__connection = self._create_snfk_connection(cfg, session_parameters)
-            self.__cursor = self.__connection.cursor(snowflake.connector.DictCursor)
+            self.__cursor = self.__connection.cursor(DictCursor)
             yield self
         finally:
             self.close()
@@ -213,7 +213,7 @@ class SnowflakeClient:
     @property
     def _cursor(self) -> SnowflakeCursor:
         if not self.__cursor:
-            self.__cursor = self._connection.cursor(snowflake.connector.DictCursor)
+            self.__cursor = self._connection.cursor(DictCursor)
         return self.__cursor
 
     @property

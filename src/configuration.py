@@ -1,6 +1,7 @@
 import dataclasses
 import json
 from dataclasses import dataclass
+from typing import Self
 
 import dataconf
 from keboola.component import UserException
@@ -19,7 +20,7 @@ class ConfigurationBase:
             return value
 
     @staticmethod
-    def load_from_dict(configuration: dict):
+    def load_from_dict(configuration: dict) -> Self:
         """
         Initialize the configuration dataclass object from dictionary.
         Args:

@@ -1,12 +1,12 @@
 import functools
 import logging
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
-from cryptography.hazmat.primitives import serialization
+from dataclasses import asdict, dataclass
 
 import snowflake
+from cryptography.hazmat.primitives import serialization
 from snowflake.connector import SnowflakeConnection
-from snowflake.connector.cursor import SnowflakeCursor
+from snowflake.connector.cursor import DictCursor, SnowflakeCursor
 
 
 @dataclass
@@ -61,7 +61,7 @@ class SnowflakeClient:
             cfg = asdict(credentials_obj)
             cfg["session_parameters"] = session_parameters
             self.__connection = self._create_snfk_connection(cfg, session_parameters)
-            self.__cursor = self.__connection.cursor(snowflake.connector.DictCursor)
+            self.__cursor = self.__connection.cursor(DictCursor)
             yield self
         finally:
             self.close()
@@ -134,9 +134,14 @@ class SnowflakeClient:
                 raise
 
     @_check_connection
-    def execute_query(self, query: str, params: dict = None, returning_result: bool = False) -> list[dict] | None:
-        logging.debug(f"{query}")
-        if returning_result:
+    def execute_query(
+        self,
+        query: str,
+        params: dict | tuple | None = None,
+        return_result: bool = False,
+    ) -> list[dict] | None:
+        logging.info("Query: %s, params: %s", query, params)
+        if return_result:
             if params:
                 return self._cursor.execute(query, params).fetchall()
             return self._cursor.execute(query).fetchall()
@@ -187,7 +192,7 @@ class SnowflakeClient:
         query = (
             f"SHOW SCHEMAS LIKE '{schema_name}' IN \"{database}\""
         )
-        result = self.execute_query(query, returning_result=True)
+        result = self.execute_query(query, return_result=True)
         if any(row.get("name", "").lower() == schema_name.lower() for row in result):
             logging.info(f"Schema {schema_name} already exists in database {database}. Continuing...")
 
@@ -203,17 +208,17 @@ class SnowflakeClient:
     @validate_sql_placeholders
     @_check_connection
     def use_warehouse(self, warehouse: str):
-        self.execute_query(query="USE WAREHOUSE %(warehouse)s", params={"warehouse": warehouse})
+        self.execute_query("USE WAREHOUSE IDENTIFIER(%s)", (warehouse,))
 
     @validate_sql_placeholders
     @_check_connection
     def use_role(self, role: str):
-        self.execute_query(f"USE ROLE {role};")
+        self.execute_query("USE ROLE IDENTIFIER(%s)", (role,))
 
     @property
     def _cursor(self) -> SnowflakeCursor:
         if not self.__cursor:
-            self.__cursor = self._connection.cursor(snowflake.connector.DictCursor)
+            self.__cursor = self._connection.cursor(DictCursor)
         return self.__cursor
 
     @property
